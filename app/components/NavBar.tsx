@@ -10,9 +10,15 @@ const NavBar = () => {
           <Image src={"/icons/logo.png"} alt="logo" width={24} height={24} />
         </Link>
         <ul>
-          <Link href="/">Events</Link>
-          <Link href="/">Rating</Link>
-          <Link href="/">Market Place</Link>
+          <li>
+            <Link href="/">Events</Link>
+          </li>
+          <li>
+            <Link href="/">Rating</Link>
+          </li>
+          <li>
+            <Link href="/">Market Place</Link>
+          </li>
         </ul>
       </nav>
     </header>
