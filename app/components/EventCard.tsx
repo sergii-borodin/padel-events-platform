@@ -11,8 +11,29 @@ interface Props {
   location: string;
   date: string;
   time: string;
+  venueType: "inside" | "outside";
+  minRating: number;
+  maxRating: number;
+  bookingsCount: number;
+  maxParticipants: number;
+  duration: number;
 }
-const EventCard = ({ title, imageUrl, slug, location, date, time }: Props) => {
+const EventCard = ({
+  title,
+  imageUrl,
+  slug,
+  location,
+  date,
+  time,
+  venueType,
+  minRating,
+  maxRating,
+  bookingsCount,
+  maxParticipants,
+  duration,
+}: Props) => {
+  const availableSpots = Math.max(0, maxParticipants - bookingsCount);
+
   return (
     <Link
       href={`/events/${slug}`}
@@ -23,6 +44,7 @@ const EventCard = ({ title, imageUrl, slug, location, date, time }: Props) => {
           event_slug: slug,
           event_location: location,
           event_date: date,
+          event_venue_type: venueType,
         })
       }
     >
@@ -48,6 +70,16 @@ const EventCard = ({ title, imageUrl, slug, location, date, time }: Props) => {
           <Image src="/icons/clock.svg" alt="time" width={14} height={14} />
           <p>{time}</p>
         </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <p>Venue: {venueType}</p>
+        <p>
+          Rating: {minRating} - {maxRating}
+        </p>
+        <p>
+          Spots: {availableSpots}/{maxParticipants}
+        </p>
+        <p>Duration: {duration} min</p>
       </div>
     </Link>
   );

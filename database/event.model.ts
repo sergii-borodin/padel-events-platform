@@ -17,7 +17,7 @@ export interface EventDocument {
   location: string;
   date: string;
   time: string;
-  mode: string;
+  venueType: "inside" | "outside";
   minRating: number;
   maxRating: number;
   maxParticipants: number;
@@ -117,7 +117,19 @@ const eventSchema = new Schema<EventDocument, EventModel>(
     location: stringField("location"),
     date: stringField("date"),
     time: stringField("time"),
-    mode: stringField("mode"),
+    venueType: {
+      type: String,
+      required: [true, "venueType is required."],
+      trim: true,
+      enum: {
+        values: ["inside", "outside"],
+        message: "venueType must be either inside or outside.",
+      },
+      validate: {
+        validator: (value: string) => value.trim().length > 0,
+        message: "venueType is required.",
+      },
+    },
     minRating: {
       type: Number,
       required: [true, "minRating is required."],
@@ -166,7 +178,10 @@ eventSchema.pre(
     this.image = requireTrimmedString(this.image, "image");
     this.venue = requireTrimmedString(this.venue, "venue");
     this.location = requireTrimmedString(this.location, "location");
-    this.mode = requireTrimmedString(this.mode, "mode");
+    this.venueType = requireTrimmedString(
+      this.venueType,
+      "venueType",
+    ) as EventDocument["venueType"];
     this.organizer = requireTrimmedString(this.organizer, "organizer");
     this.date = normalizeDateInput(requireTrimmedString(this.date, "date"));
     this.time = normalizeTimeInput(requireTrimmedString(this.time, "time"));
