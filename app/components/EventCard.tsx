@@ -1,16 +1,15 @@
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import posthog from "posthog-js";
 
 interface Props {
   title: string;
-  imageUrl: string;
   slug: string;
   location: string;
-  date: string;
+  date: Date;
   time: string;
+  imageUrl: string;
   venueType: "inside" | "outside";
   minRating: number;
   maxRating: number;
@@ -18,13 +17,14 @@ interface Props {
   maxParticipants: number;
   duration: number;
 }
+
 const EventCard = ({
   title,
-  imageUrl,
   slug,
   location,
   date,
   time,
+  imageUrl,
   venueType,
   minRating,
   maxRating,
@@ -33,7 +33,6 @@ const EventCard = ({
   duration,
 }: Props) => {
   const availableSpots = Math.max(0, maxParticipants - bookingsCount);
-
   return (
     <Link
       href={`/events/${slug}`}
@@ -46,8 +45,7 @@ const EventCard = ({
           event_date: date,
           event_venue_type: venueType,
         })
-      }
-    >
+      }>
       <Image
         src={imageUrl}
         alt={title}
@@ -55,16 +53,18 @@ const EventCard = ({
         height={300}
         className="poster"
       />
+
       <div className="flex flex-row gap-2">
         <Image src="/icons/pin.svg" alt="location" width={14} height={14} />
         <p>{location}</p>
       </div>
+
       <p className="title">{title}</p>
 
       <div className="datetime">
         <div>
           <Image src="/icons/calendar.svg" alt="date" width={14} height={14} />
-          <p>{date}</p>
+          <p>{date.toString()}</p>
         </div>
         <div>
           <Image src="/icons/clock.svg" alt="time" width={14} height={14} />

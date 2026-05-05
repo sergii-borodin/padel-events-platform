@@ -2,21 +2,25 @@ import {
   HydratedDocument,
   Model,
   Schema,
+  SchemaDefinitionProperty,
   model,
   models,
-  SchemaDefinitionProperty,
 } from "mongoose";
+
+/* =========================
+   Types
+========================= */
 
 export interface EventDocument {
   title: string;
   slug: string;
   description: string;
   overview: string;
-  image: string;
+  imageUrl: string;
   venue: string;
   location: string;
-  date: string;
-  time: string;
+  date: Date; // ✅ FIXED: real Date
+  time: string; // HH:MM
   venueType: "inside" | "outside";
   minRating: number;
   maxRating: number;
@@ -30,11 +34,14 @@ export interface EventDocument {
 
 type EventModel = Model<EventDocument>;
 
-function requireTrimmedString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${fieldName} is required.`);
-  }
+/* =========================
+   Helpers
+========================= */
 
+function requireTrimmedString(value: unknown, field: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`${field} is required.`);
+  }
   return value.trim();
 }
 
@@ -48,116 +55,115 @@ function createSlug(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function normalizeDateInput(value: string): string {
-  const parsedDate = new Date(value);
+function normalizeTime(value: string): string {
+  const v = value.trim();
 
-  if (Number.isNaN(parsedDate.getTime())) {
-    throw new Error("date must be a valid date.");
+  const match24 = v.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (match24) {
+    return `${match24[1].padStart(2, "0")}:${match24[2]}`;
   }
 
-  // Persist dates in ISO format so queries and comparisons stay predictable.
-  return parsedDate.toISOString();
-}
+  const match12 = v.match(/^(0?[1-9]|1[0-2]):([0-5]\d)\s*([AaPp][Mm])$/);
 
-function normalizeTimeInput(value: string): string {
-  const normalized = value.trim();
-
-  const twentyFourHourMatch = normalized.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
-  if (twentyFourHourMatch) {
-    const [, hours, minutes] = twentyFourHourMatch;
-    return `${hours.padStart(2, "0")}:${minutes}`;
+  if (!match12) {
+    throw new Error("Invalid time format (HH:MM or HH:MM AM/PM)");
   }
 
-  const twelveHourMatch = normalized.match(
-    /^(0?[1-9]|1[0-2]):([0-5]\d)\s*([AaPp][Mm])$/,
-  );
+  let hours = parseInt(match12[1], 10);
+  const minutes = match12[2];
+  const period = match12[3].toUpperCase();
 
-  if (!twelveHourMatch) {
-    throw new Error("time must use HH:MM or H:MM AM/PM format.");
-  }
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
 
-  const [, rawHours, minutes, meridiem] = twelveHourMatch;
-  let hours = Number.parseInt(rawHours, 10);
-
-  if (meridiem.toUpperCase() === "PM" && hours !== 12) {
-    hours += 12;
-  }
-
-  if (meridiem.toUpperCase() === "AM" && hours === 12) {
-    hours = 0;
-  }
-
-  // Store time in 24-hour format for consistent display and filtering.
   return `${hours.toString().padStart(2, "0")}:${minutes}`;
 }
 
-const stringField = (fieldName: string): SchemaDefinitionProperty<string> => ({
+/* =========================
+   Schema Fields
+========================= */
+
+const stringField = (name: string): SchemaDefinitionProperty<string> => ({
   type: String,
-  required: [true, `${fieldName} is required.`],
+  required: [true, `${name} is required.`],
   trim: true,
   validate: {
-    validator: (value: string) => value.trim().length > 0,
-    message: `${fieldName} is required.`,
+    validator: (v: string) => v.trim().length > 0,
+    message: `${name} cannot be empty.`,
   },
 });
+
+/* =========================
+   Schema
+========================= */
 
 const eventSchema = new Schema<EventDocument, EventModel>(
   {
     title: stringField("title"),
+
     slug: {
       type: String,
       unique: true,
       index: true,
       trim: true,
     },
+
     description: stringField("description"),
     overview: stringField("overview"),
-    image: stringField("image"),
+    imageUrl: stringField("image"),
     venue: stringField("venue"),
     location: stringField("location"),
-    date: stringField("date"),
+
+    date: {
+      type: Date,
+      required: [true, "date is required."],
+    },
+
     time: stringField("time"),
+
     venueType: {
       type: String,
-      required: [true, "venueType is required."],
-      trim: true,
-      enum: {
-        values: ["inside", "outside"],
-        message: "venueType must be either inside or outside.",
-      },
-      validate: {
-        validator: (value: string) => value.trim().length > 0,
-        message: "venueType is required.",
-      },
+      required: true,
+      enum: ["inside", "outside"],
     },
+
     minRating: {
       type: Number,
-      required: [true, "minRating is required."],
+      required: true,
+      min: 0,
+      max: 10,
     },
+
     maxRating: {
       type: Number,
-      required: [true, "maxRating is required."],
+      required: true,
+      min: 0,
+      max: 10,
     },
+
     maxParticipants: {
       type: Number,
-      required: [true, "maxParticipants is required."],
+      required: true,
+      min: 1,
     },
+
     duration: {
       type: Number,
-      required: [true, "duration is required."],
+      required: true,
+      min: 1, // minutes
     },
+
     organizer: stringField("organizer"),
+
     tags: {
       type: [String],
-      required: [true, "tags are required."],
+      required: true,
       validate: {
-        validator: (value: string[]) =>
-          Array.isArray(value) &&
-          value.length > 0 &&
-          value.every(
-            (tag) => typeof tag === "string" && tag.trim().length > 0,
-          ),
-        message: "tags must contain at least one non-empty string.",
+        validator: (arr: string[]) =>
+          Array.isArray(arr) &&
+          arr.length > 0 &&
+          arr.every((t) => typeof t === "string" && t.trim()),
+        message: "tags must contain non-empty strings",
       },
     },
   },
@@ -167,32 +173,65 @@ const eventSchema = new Schema<EventDocument, EventModel>(
   },
 );
 
+/* =========================
+   Indexes (important)
+========================= */
+
+// fast lookup
 eventSchema.index({ slug: 1 }, { unique: true });
 
-eventSchema.pre(
-  "save",
-  function preSave(this: HydratedDocument<EventDocument>) {
-    this.title = requireTrimmedString(this.title, "title");
-    this.description = requireTrimmedString(this.description, "description");
-    this.overview = requireTrimmedString(this.overview, "overview");
-    this.image = requireTrimmedString(this.image, "image");
-    this.venue = requireTrimmedString(this.venue, "venue");
-    this.location = requireTrimmedString(this.location, "location");
-    this.venueType = requireTrimmedString(
-      this.venueType,
-      "venueType",
-    ) as EventDocument["venueType"];
-    this.organizer = requireTrimmedString(this.organizer, "organizer");
-    this.date = normalizeDateInput(requireTrimmedString(this.date, "date"));
-    this.time = normalizeTimeInput(requireTrimmedString(this.time, "time"));
-    this.tags = this.tags.map((tag) => requireTrimmedString(tag, "tags"));
+// real-world queries
+eventSchema.index({ date: 1, location: 1 });
+eventSchema.index({ venueType: 1, date: 1 });
 
-    if (this.isModified("title") || !this.slug) {
-      this.slug = createSlug(this.title);
+/* =========================
+   Pre-save logic
+========================= */
+
+eventSchema.pre("save", async function () {
+  const doc = this as HydratedDocument<EventDocument>;
+
+  // sanitize strings
+  doc.title = requireTrimmedString(doc.title, "title");
+  doc.description = requireTrimmedString(doc.description, "description");
+  doc.overview = requireTrimmedString(doc.overview, "overview");
+  doc.imageUrl = requireTrimmedString(doc.imageUrl, "image");
+  doc.venue = requireTrimmedString(doc.venue, "venue");
+  doc.location = requireTrimmedString(doc.location, "location");
+  doc.organizer = requireTrimmedString(doc.organizer, "organizer");
+
+  doc.time = normalizeTime(requireTrimmedString(doc.time, "time"));
+  doc.tags = doc.tags.map((t) => requireTrimmedString(t, "tag"));
+
+  // cross-field validation
+  if (doc.minRating > doc.maxRating) {
+    throw new Error("minRating cannot be greater than maxRating");
+  }
+
+  // slug generation + collision handling
+  if (doc.isModified("title") || !doc.slug) {
+    const baseSlug = createSlug(doc.title);
+
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (
+      await (doc.constructor as EventModel).exists({
+        slug,
+        _id: { $ne: doc._id },
+      })
+    ) {
+      slug = `${baseSlug}-${counter++}`;
     }
-  },
-);
+
+    doc.slug = slug;
+  }
+});
+
+/* =========================
+   Model export
+========================= */
 
 export const Event =
-  (models.Event as EventModel | undefined) ??
+  (models.Event as EventModel | undefined) ||
   model<EventDocument, EventModel>("Event", eventSchema);
