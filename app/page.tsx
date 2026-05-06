@@ -8,7 +8,7 @@ const events: EventDocument[] = [
     slug: "sunset-padel-open",
     description: "An after-work padel competition for intermediate players.",
     overview: "Play group-stage matches at sunset with knockout rounds.",
-    imageUrl: "/images/event1.png",
+    image: "/images/event1.png",
     venue: "Club Mar Padel",
     location: "Barcelona, Spain",
     date: new Date("May 18, 2026"),
@@ -28,7 +28,7 @@ const events: EventDocument[] = [
     slug: "weekend-champions-cup",
     description: "A weekend cup focused on competitive doubles.",
     overview: "Team up and play a high-intensity weekend ladder.",
-    imageUrl: "/images/event2.png",
+    image: "/images/event2.png",
     venue: "Arena Lisboa",
     location: "Lisbon, Portugal",
     date: new Date("May 25, 2026"),
@@ -48,7 +48,7 @@ const events: EventDocument[] = [
     slug: "city-club-night-matches",
     description: "Evening city league sessions with rotating opponents.",
     overview: "Fast-paced matches under lights in a social format.",
-    imageUrl: "/images/event3.png",
+    image: "/images/event3.png",
     venue: "Madrid Central Club",
     location: "Madrid, Spain",
     date: new Date("June 2, 2026"),
@@ -68,7 +68,7 @@ const events: EventDocument[] = [
     slug: "coastal-doubles-challenge",
     description: "Friendly doubles challenge by the coast.",
     overview: "Compete in beachside courts and enjoy post-match networking.",
-    imageUrl: "/images/event4.png",
+    image: "/images/event4.png",
     venue: "Valencia Sea Courts",
     location: "Valencia, Spain",
     date: new Date("June 9, 2026"),
@@ -88,7 +88,7 @@ const events: EventDocument[] = [
     slug: "rising-stars-qualifier",
     description: "Qualifier for emerging players aiming for the finals.",
     overview: "Top-ranked players advance to the Rising Stars finals.",
-    imageUrl: "/images/event5.png",
+    image: "/images/event5.png",
     venue: "Seville Premier Padel",
     location: "Seville, Spain",
     date: new Date("June 14, 2026"),
@@ -108,7 +108,7 @@ const events: EventDocument[] = [
     slug: "grand-slam-training-day",
     description: "Intensive training day with drills and coaching.",
     overview: "Skill clinics, endurance sessions, and tactical play.",
-    imageUrl: "/images/event6.png",
+    image: "/images/event6.png",
     venue: "Malaga Pro Academy",
     location: "Malaga, Spain",
     date: new Date("June 21, 2026"),
@@ -137,7 +137,7 @@ const bookingCountsBySlug: Record<string, number> = {
 const Home = () => {
   return (
     <section className="relative">
-      <h1 className="text-center">The Hub for Every Padel Player</h1>
+      <h1 className="text-center pb-1">The Hub for Every Padel Player</h1>
       <p className="text-center mt-5">Events, Statistic, Marketplace</p>
 
       <ExploreBtn />
@@ -149,7 +149,7 @@ const Home = () => {
             <li key={event.slug}>
               <EventCard
                 title={event.title}
-                imageUrl={event.imageUrl}
+                image={event.image}
                 slug={event.slug}
                 location={event.location}
                 date={event.date}

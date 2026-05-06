@@ -16,7 +16,7 @@ export interface EventDocument {
   slug: string;
   description: string;
   overview: string;
-  imageUrl: string;
+  image: string;
   venue: string;
   location: string;
   date: Date; // ✅ FIXED: real Date
@@ -103,14 +103,14 @@ const eventSchema = new Schema<EventDocument, EventModel>(
 
     slug: {
       type: String,
-      unique: true,
+      // unique: true,
       index: true,
       trim: true,
     },
 
     description: stringField("description"),
     overview: stringField("overview"),
-    imageUrl: stringField("image"),
+    image: stringField("image"),
     venue: stringField("venue"),
     location: stringField("location"),
 
@@ -195,7 +195,7 @@ eventSchema.pre("save", async function () {
   doc.title = requireTrimmedString(doc.title, "title");
   doc.description = requireTrimmedString(doc.description, "description");
   doc.overview = requireTrimmedString(doc.overview, "overview");
-  doc.imageUrl = requireTrimmedString(doc.imageUrl, "image");
+  doc.image = requireTrimmedString(doc.image, "image");
   doc.venue = requireTrimmedString(doc.venue, "venue");
   doc.location = requireTrimmedString(doc.location, "location");
   doc.organizer = requireTrimmedString(doc.organizer, "organizer");

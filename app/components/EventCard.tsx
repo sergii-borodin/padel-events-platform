@@ -9,7 +9,7 @@ interface Props {
   location: string;
   date: Date;
   time: string;
-  imageUrl: string;
+  image: string;
   venueType: "inside" | "outside";
   minRating: number;
   maxRating: number;
@@ -24,7 +24,7 @@ const EventCard = ({
   location,
   date,
   time,
-  imageUrl,
+  image,
   venueType,
   minRating,
   maxRating,
@@ -47,7 +47,7 @@ const EventCard = ({
         })
       }>
       <Image
-        src={imageUrl}
+        src={image}
         alt={title}
         width={410}
         height={300}
