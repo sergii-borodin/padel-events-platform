@@ -11,7 +11,7 @@ import {
    Types
 ========================= */
 
-export interface EventDocument {
+export interface IEvent {
   title: string;
   slug: string;
   description: string;
@@ -32,7 +32,7 @@ export interface EventDocument {
   updatedAt: Date;
 }
 
-type EventModel = Model<EventDocument>;
+type EventModel = Model<IEvent>;
 
 /* =========================
    Helpers
@@ -97,14 +97,12 @@ const stringField = (name: string): SchemaDefinitionProperty<string> => ({
    Schema
 ========================= */
 
-const eventSchema = new Schema<EventDocument, EventModel>(
+const eventSchema = new Schema<IEvent, EventModel>(
   {
     title: stringField("title"),
 
     slug: {
       type: String,
-      // unique: true,
-      index: true,
       trim: true,
     },
 
@@ -189,7 +187,7 @@ eventSchema.index({ venueType: 1, date: 1 });
 ========================= */
 
 eventSchema.pre("save", async function () {
-  const doc = this as HydratedDocument<EventDocument>;
+  const doc = this as HydratedDocument<IEvent>;
 
   // sanitize strings
   doc.title = requireTrimmedString(doc.title, "title");
@@ -234,4 +232,4 @@ eventSchema.pre("save", async function () {
 
 export const Event =
   (models.Event as EventModel | undefined) ||
-  model<EventDocument, EventModel>("Event", eventSchema);
+  model<IEvent, EventModel>("Event", eventSchema);
