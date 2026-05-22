@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import BookEvent from "@/app/components/BookEvent";
+import SimilarEventCard from "@/app/components/SimilarEventCard";
+import { getSimilarEventBySlug } from "@/lib/actions/event.actions";
+import { IEvent } from "@/database/event.model";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -65,6 +69,8 @@ const EventDetailsPage = async ({
 
   if (!description) return notFound();
 
+  const bookings = Number(maxParticipants) - 1;
+
   const getGameTimeRange = (
     startTime: string,
     durationMinutes: number,
@@ -82,7 +88,10 @@ const EventDetailsPage = async ({
     return `${startTime} – ${pad(endHours)}:${pad(endMinutes)}`;
   };
 
+  const similarEvents: IEvent[] = await getSimilarEventBySlug(slug);
+
   return (
+    <>
     <section id="event">
       <div className="header">
         <h1>{title}</h1>
@@ -144,7 +153,6 @@ const EventDetailsPage = async ({
             <p>
               Expected players rating: {minRating}–{maxRating}
             </p>
-            <p>Duration: {duration} min</p>
           </section>
 
           <section className="flex-col-gap-2">
@@ -155,15 +163,51 @@ const EventDetailsPage = async ({
 
         <aside className="booking">
           <div className="signup-card">
-            <p className="text-lg font-semibold">Book Event</p>
+            <h2 className="text-lg font-semibold">Book Your Spot</h2>
             <p className="text-light-200 text-sm">{title}</p>
             <p className="text-light-200 text-sm">
               {formatVenueType(venueType)} · {venue}
             </p>
+            {bookings < maxParticipants ? (
+              <>
+                {bookings > 0 ? (
+                  <p className="text-sm">
+                    Join {bookings} people who have already booked their spot!
+                  </p>
+                ) : (
+                  <p className="text-sm">Be the first to book your spot!</p>
+                )}
+                <BookEvent />
+              </>
+            ) : (
+              <p className="text-red-500">No available spots left</p>
+            )}
           </div>
         </aside>
       </div>
     </section>
+    {similarEvents.length > 0 && (
+      <section className="similar-events" aria-labelledby="similar-events-heading">
+        <div className="similar-events-header">
+          <h2 id="similar-events-heading">Similar Events</h2>
+          <p>Other events you might enjoy based on tags and skill level</p>
+        </div>
+        <ul className="similar-events-list">
+          {similarEvents.map((event) => (
+            <li key={event.slug}>
+              <SimilarEventCard
+                title={event.title}
+                image={event.image}
+                slug={event.slug}
+                location={event.location}
+                date={new Date(event.date)}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+    </>
   );
 };
 

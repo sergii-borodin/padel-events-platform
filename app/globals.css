@@ -247,6 +247,46 @@
     }
   }
 
+  .similar-events {
+    @apply mt-16 w-full border-t border-gray-700 pt-12;
+
+    .similar-events-header {
+      @apply mb-8 flex flex-col gap-2;
+
+      h2 {
+        @apply font-schibsted-grotesk text-2xl font-bold;
+      }
+
+      p {
+        @apply text-light-200 text-sm font-light;
+      }
+    }
+
+    .similar-events-list {
+      @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3;
+    }
+  }
+
+  .similar-event-card {
+    @apply border-dark-200 bg-dark-100 card-shadow flex items-center gap-4 rounded-[10px] border p-3 transition-colors hover:border-primary/40;
+
+    .thumb {
+      @apply h-20 w-28 shrink-0 rounded-md object-cover;
+    }
+
+    .info {
+      @apply flex min-w-0 flex-col gap-1;
+
+      .title {
+        @apply text-light-100 line-clamp-2 text-base font-semibold leading-snug;
+      }
+
+      .meta {
+        @apply text-light-200 text-sm font-light;
+      }
+    }
+  }
+
   .pill {
     @apply bg-dark-100 text-light-100 text-xs rounded-[6px] px-5 py-2;
   }

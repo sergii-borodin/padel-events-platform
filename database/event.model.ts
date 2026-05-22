@@ -129,14 +129,14 @@ const eventSchema = new Schema<IEvent, EventModel>(
       type: Number,
       required: true,
       min: 0,
-      max: 10,
+      max: 4,
     },
 
     maxRating: {
       type: Number,
       required: true,
-      min: 0,
-      max: 10,
+      min: 1,
+      max: 5,
     },
 
     maxParticipants: {
@@ -148,7 +148,7 @@ const eventSchema = new Schema<IEvent, EventModel>(
     duration: {
       type: Number,
       required: true,
-      min: 1, // minutes
+      min: 60, // minutes
     },
 
     organizer: stringField("organizer"),
