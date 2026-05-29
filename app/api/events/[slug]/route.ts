@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Error as MongooseError } from "mongoose";
 
 import { Event, type IEvent } from "@/database/event.model";
+import { Booking } from "@/database/booking.model";
 import connectDB from "@/lib/mongodb";
 
 type RouteContext = {
@@ -40,7 +41,28 @@ export async function GET(_request: Request, context: RouteContext) {
 
     await connectDB();
 
-    const event = await Event.findOne({ slug }).lean<EventDocument | null>();
+    const [event] = await Event.aggregate<EventDocument>([
+      { $match: { slug } },
+      {
+        $lookup: {
+          from: Booking.collection.name,
+          localField: "_id",
+          foreignField: "eventId",
+          as: "bookings",
+        },
+      },
+      {
+        $addFields: {
+          bookingsCount: { $size: "$bookings" },
+        },
+      },
+      {
+        $project: {
+          bookings: 0,
+        },
+      },
+      { $limit: 1 },
+    ]);
 
     if (!event) {
       return NextResponse.json(

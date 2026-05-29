@@ -4,15 +4,6 @@ import type { IEvent } from "@/database/event.model";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-const bookingCountsBySlug: Record<string, number> = {
-  "sunset-padel-open": 36,
-  "weekend-champions-cup": 46,
-  "city-club-night-matches": 33,
-  "coastal-doubles-challenge": 21,
-  "rising-stars-qualifier": 20,
-  "grand-slam-training-day": 16,
-};
-
 const Home = async () => {
   const response = await fetch(`${BASE_URL}/api/events`, {
     cache: "no-store",
@@ -43,7 +34,7 @@ const Home = async () => {
                 venueType={event.venueType}
                 minRating={event.minRating}
                 maxRating={event.maxRating}
-                bookingsCount={bookingCountsBySlug[event.slug] ?? 0}
+                bookingsCount={event.bookingsCount ?? 0}
                 maxParticipants={event.maxParticipants}
                 duration={event.duration}
               />

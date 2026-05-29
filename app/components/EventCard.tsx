@@ -2,12 +2,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import posthog from "posthog-js";
+import { formatEventCardDate } from "@/lib/utils/eventDateFormatters";
 
 interface Props {
   title: string;
   slug: string;
   location: string;
-  date: Date;
+  date: Date | string;
   time: string;
   image: string;
   venueType: "inside" | "outside";
@@ -64,7 +65,7 @@ const EventCard = ({
       <div className="datetime">
         <div>
           <Image src="/icons/calendar.svg" alt="date" width={14} height={14} />
-          <p>{date.toString()}</p>
+          <p>{formatEventCardDate(date)}</p>
         </div>
         <div>
           <Image src="/icons/clock.svg" alt="time" width={14} height={14} />

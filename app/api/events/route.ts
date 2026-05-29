@@ -3,6 +3,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 import connectDB from "@/lib/mongodb";
 import { Event } from "@/database/event.model";
+import { Booking } from "@/database/booking.model";
 
 export async function POST(req: NextRequest) {
   try {
@@ -79,7 +80,30 @@ export async function GET() {
   try {
     await connectDB();
 
-    const events = await Event.find().sort({ createdAt: -1 });
+    const events = await Event.aggregate([
+      {
+        $lookup: {
+          from: Booking.collection.name,
+          localField: "_id",
+          foreignField: "eventId",
+          as: "bookings",
+        },
+      },
+      {
+        $addFields: {
+          bookingsCount: { $size: "$bookings" },
+        },
+      },
+      {
+        $project: {
+          bookings: 0,
+        },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+    ]);
+
     return NextResponse.json(
       { message: "Events fetched successfully", events },
       { status: 200 },

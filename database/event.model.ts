@@ -28,6 +28,7 @@ export interface IEvent {
   duration: number;
   organizer: string;
   tags: string[];
+  bookingsCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
