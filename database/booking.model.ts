@@ -7,20 +7,26 @@ import {
   models,
 } from "mongoose";
 
-import { Event } from "./event.model";
+/* =========================
+   Types
+========================= */
 
-export interface BookingDocument {
+export interface IBooking {
   eventId: Types.ObjectId;
   email: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-type BookingModel = Model<BookingDocument>;
+type BookingModel = Model<IBooking>;
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/* =========================
+   Schema
+========================= */
 
-const bookingSchema = new Schema<BookingDocument, BookingModel>(
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const bookingSchema = new Schema<IBooking, BookingModel>(
   {
     eventId: {
       type: Schema.Types.ObjectId,
@@ -28,13 +34,14 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
       required: [true, "eventId is required."],
       index: true,
     },
+
     email: {
       type: String,
       required: [true, "email is required."],
       trim: true,
       lowercase: true,
       validate: {
-        validator: (value: string) => emailPattern.test(value),
+        validator: (value: string) => EMAIL_PATTERN.test(value),
         message: "email must be a valid email address.",
       },
     },
@@ -45,28 +52,36 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
   },
 );
 
+/* =========================
+   Indexes
+========================= */
+
+// One booking per email per event
 bookingSchema.index({ eventId: 1, email: 1 }, { unique: true });
-bookingSchema.pre(
-  "save",
-  async function preSave(this: HydratedDocument<BookingDocument>) {
-    if (typeof this.email !== "string" || this.email.trim().length === 0) {
-      throw new Error("email is required.");
-    }
 
-    this.email = this.email.trim().toLowerCase();
+/* =========================
+   Pre-save hook
+========================= */
 
-    if (!emailPattern.test(this.email)) {
-      throw new Error("email must be a valid email address.");
-    }
+// NOTE: Event existence is intentionally not checked here.
+// Validate that the referenced event exists in your route/service layer
+// before creating a booking. Doing it here would:
+//   1. Create a circular import risk (booking.model ↔ event.model)
+//   2. Add an extra DB round-trip on every save
+//   3. Duplicate logic that belongs at the API boundary
 
-    const eventExists = await Event.exists({ _id: this.eventId });
+bookingSchema.pre("save", function (this: HydratedDocument<IBooking>) {
+  // Mongoose schema already applies trim + lowercase, but we guard
+  // against any raw pre-schema manipulation reaching this point.
+  if (!EMAIL_PATTERN.test(this.email)) {
+    throw new Error("email must be a valid email address.");
+  }
+});
 
-    if (!eventExists) {
-      throw new Error("Referenced event does not exist.");
-    }
-  },
-);
+/* =========================
+   Model export
+========================= */
 
 export const Booking =
   (models.Booking as BookingModel | undefined) ??
-  model<BookingDocument, BookingModel>("Booking", bookingSchema);
+  model<IBooking, BookingModel>("Booking", bookingSchema);

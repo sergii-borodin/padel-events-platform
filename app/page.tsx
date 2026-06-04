@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import EventCard from "./components/EventCard";
 import ExploreBtn from "./components/ExploreBtn";
 import type { IEvent } from "@/database/event.model";
@@ -5,6 +6,8 @@ import type { IEvent } from "@/database/event.model";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const Home = async () => {
+  "use cache";
+  cacheLife("hours");
   const response = await fetch(`${BASE_URL}/api/events`, {
     cache: "no-store",
   });

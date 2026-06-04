@@ -1,11 +1,4 @@
-import {
-  HydratedDocument,
-  Model,
-  Schema,
-  SchemaDefinitionProperty,
-  model,
-  models,
-} from "mongoose";
+import { HydratedDocument, Model, Schema, model, models } from "mongoose";
 
 /* =========================
    Types
@@ -19,13 +12,13 @@ export interface IEvent {
   image: string;
   venue: string;
   location: string;
-  date: Date; // ✅ FIXED: real Date
-  time: string; // HH:MM
+  date: Date;
+  time: string; // HH:MM (24h, normalised)
   venueType: "inside" | "outside";
   minRating: number;
   maxRating: number;
   maxParticipants: number;
-  duration: number;
+  duration: number; // minutes
   organizer: string;
   tags: string[];
   bookingsCount?: number;
@@ -65,9 +58,8 @@ function normalizeTime(value: string): string {
   }
 
   const match12 = v.match(/^(0?[1-9]|1[0-2]):([0-5]\d)\s*([AaPp][Mm])$/);
-
   if (!match12) {
-    throw new Error("Invalid time format (HH:MM or HH:MM AM/PM)");
+    throw new Error("Invalid time format. Use HH:MM or HH:MM AM/PM.");
   }
 
   let hours = parseInt(match12[1], 10);
@@ -81,88 +73,113 @@ function normalizeTime(value: string): string {
 }
 
 /* =========================
-   Schema Fields
-========================= */
-
-const stringField = (name: string): SchemaDefinitionProperty<string> => ({
-  type: String,
-  required: [true, `${name} is required.`],
-  trim: true,
-  validate: {
-    validator: (v: string) => v.trim().length > 0,
-    message: `${name} cannot be empty.`,
-  },
-});
-
-/* =========================
    Schema
 ========================= */
 
 const eventSchema = new Schema<IEvent, EventModel>(
   {
-    title: stringField("title"),
+    title: {
+      type: String,
+      required: [true, "title is required."],
+      trim: true,
+    },
 
     slug: {
       type: String,
       trim: true,
     },
 
-    description: stringField("description"),
-    overview: stringField("overview"),
-    image: stringField("image"),
-    venue: stringField("venue"),
-    location: stringField("location"),
+    description: {
+      type: String,
+      required: [true, "description is required."],
+      trim: true,
+    },
+
+    overview: {
+      type: String,
+      required: [true, "overview is required."],
+      trim: true,
+    },
+
+    image: {
+      type: String,
+      required: [true, "image is required."],
+      trim: true,
+    },
+
+    venue: {
+      type: String,
+      required: [true, "venue is required."],
+      trim: true,
+    },
+
+    location: {
+      type: String,
+      required: [true, "location is required."],
+      trim: true,
+    },
 
     date: {
       type: Date,
       required: [true, "date is required."],
     },
 
-    time: stringField("time"),
+    time: {
+      type: String,
+      required: [true, "time is required."],
+      trim: true,
+    },
 
     venueType: {
       type: String,
-      required: true,
-      enum: ["inside", "outside"],
+      required: [true, "venueType is required."],
+      enum: {
+        values: ["inside", "outside"],
+        message: "venueType must be 'inside' or 'outside'.",
+      },
     },
 
     minRating: {
       type: Number,
-      required: true,
-      min: 0,
-      max: 4,
+      required: [true, "minRating is required."],
+      min: [0, "minRating must be at least 0."],
+      max: [4, "minRating must be at most 4."],
     },
 
     maxRating: {
       type: Number,
-      required: true,
-      min: 1,
-      max: 5,
+      required: [true, "maxRating is required."],
+      min: [1, "maxRating must be at least 1."],
+      max: [5, "maxRating must be at most 5."],
     },
 
     maxParticipants: {
       type: Number,
-      required: true,
-      min: 1,
+      required: [true, "maxParticipants is required."],
+      min: [1, "maxParticipants must be at least 1."],
     },
 
     duration: {
       type: Number,
-      required: true,
-      min: 60, // minutes
+      required: [true, "duration is required."],
+      min: [60, "duration must be at least 60 minutes."],
     },
 
-    organizer: stringField("organizer"),
+    organizer: {
+      type: String,
+      required: [true, "organizer is required."],
+      trim: true,
+    },
 
     tags: {
       type: [String],
-      required: true,
+      required: [true, "tags is required."],
       validate: {
         validator: (arr: string[]) =>
           Array.isArray(arr) &&
           arr.length > 0 &&
-          arr.every((t) => typeof t === "string" && t.trim()),
-        message: "tags must contain non-empty strings",
+          arr.every((t) => typeof t === "string" && t.trim().length > 0),
+        message: "tags must be a non-empty array of non-empty strings.",
       },
     },
   },
@@ -173,24 +190,21 @@ const eventSchema = new Schema<IEvent, EventModel>(
 );
 
 /* =========================
-   Indexes (important)
+   Indexes
 ========================= */
 
-// fast lookup
 eventSchema.index({ slug: 1 }, { unique: true });
-
-// real-world queries
 eventSchema.index({ date: 1, location: 1 });
 eventSchema.index({ venueType: 1, date: 1 });
 
 /* =========================
-   Pre-save logic
+   Pre-save hook
 ========================= */
 
 eventSchema.pre("save", async function () {
   const doc = this as HydratedDocument<IEvent>;
 
-  // sanitize strings
+  // Sanitise and normalise fields
   doc.title = requireTrimmedString(doc.title, "title");
   doc.description = requireTrimmedString(doc.description, "description");
   doc.overview = requireTrimmedString(doc.overview, "overview");
@@ -198,19 +212,17 @@ eventSchema.pre("save", async function () {
   doc.venue = requireTrimmedString(doc.venue, "venue");
   doc.location = requireTrimmedString(doc.location, "location");
   doc.organizer = requireTrimmedString(doc.organizer, "organizer");
-
   doc.time = normalizeTime(requireTrimmedString(doc.time, "time"));
   doc.tags = doc.tags.map((t) => requireTrimmedString(t, "tag"));
 
-  // cross-field validation
+  // Cross-field validation
   if (doc.minRating > doc.maxRating) {
-    throw new Error("minRating cannot be greater than maxRating");
+    throw new Error("minRating cannot be greater than maxRating.");
   }
 
-  // slug generation + collision handling
+  // Slug: generate on creation or when title changes
   if (doc.isModified("title") || !doc.slug) {
     const baseSlug = createSlug(doc.title);
-
     let slug = baseSlug;
     let counter = 1;
 
@@ -232,5 +244,5 @@ eventSchema.pre("save", async function () {
 ========================= */
 
 export const Event =
-  (models.Event as EventModel | undefined) ||
+  (models.Event as EventModel | undefined) ??
   model<IEvent, EventModel>("Event", eventSchema);
