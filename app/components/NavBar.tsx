@@ -11,7 +11,7 @@ const NavBar = () => {
         </Link>
         <ul>
           <li>
-            <Link href="/api/events">Events</Link>
+            <Link href="/">Events</Link>
           </li>
           <li>
             <Link href="/">Rating</Link>
