@@ -3,6 +3,7 @@ import { Schibsted_Grotesk, Martian_Mono } from "next/font/google";
 import LightRays from "./components/LightRays";
 import "./globals.css";
 import NavBar from "./components/NavBar";
+import { AuthProvider } from "./providers/AuthProvider";
 
 const schibstedGrotesk = Schibsted_Grotesk({
   variable: "--font-schibsted-grotesk",
@@ -45,8 +46,10 @@ export default function RootLayout({
             saturation={1}
           />
         </div>
-        <NavBar />
-        <main>{children}</main>
+        <AuthProvider>
+          <NavBar />
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
