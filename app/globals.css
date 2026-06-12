@@ -139,7 +139,8 @@
     }
   }
 
-  #explore-btn {
+  #explore-btn,
+  #create-event-btn {
     @apply border-dark-200 bg-dark-100 flex w-fit cursor-pointer  rounded-full border px-8 py-3.5 max-sm:w-full text-center;
 
     a {

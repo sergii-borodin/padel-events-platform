@@ -11,13 +11,19 @@ const NavBar = () => {
         </Link>
         <ul>
           <li>
-            <Link href="/">Events</Link>
+            <Link href="/">Home</Link>
           </li>
           <li>
-            <Link href="/">Rating</Link>
+            <Link href="/events">Events</Link>
           </li>
           <li>
-            <Link href="/">Market Place</Link>
+            <Link href="/create-event">Create event</Link>
+          </li>
+          <li>
+            <Link href="/marketplace">Market Place</Link>
+          </li>
+          <li>
+            <Link href="/rating">Rating</Link>
           </li>
         </ul>
       </nav>

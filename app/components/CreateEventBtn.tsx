@@ -4,22 +4,21 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import posthog from "posthog-js";
 
-const ExploreBtn = () => {
+const CreateEventBtn = () => {
   return (
     <button
       type="button"
-      id="explore-btn"
+      id="create-event-btn"
       className="mt-7 mx-auto"
       onClick={() => {
-        console.log("CLICK");
-        posthog.capture("explore_events_clicked");
-        redirect("/events");
+        posthog.capture("create_new-event_clicked");
+        redirect("/create-event");
       }}>
       <a href="#events">
-        Explore Events
+        Create New Event
         <Image
-          src="/icons/arrow-down.svg"
-          alt="arrow-down"
+          src="/icons/calendar.svg"
+          alt="calendar"
           width={24}
           height={24}
         />
@@ -28,4 +27,4 @@ const ExploreBtn = () => {
   );
 };
 
-export default ExploreBtn;
+export default CreateEventBtn;
