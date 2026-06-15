@@ -27,7 +27,7 @@ const Login = () => {
             name="email"
             id="email"
             value={email}
-            onChange={() => setEmail}
+            onChange={(e) => setEmail(e.currentTarget.value)}
             placeholder="Enter your email address"
           />
           <label htmlFor="password">Password</label>
@@ -36,7 +36,7 @@ const Login = () => {
             name="password"
             id="password"
             value={password}
-            onChange={() => setPassword}
+            onChange={(e) => setPassword(e.currentTarget.value)}
             placeholder="Enter your password"
           />
           <button
