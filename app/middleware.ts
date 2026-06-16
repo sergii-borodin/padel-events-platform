@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
 
   if (PROTECTED_PATHS.some((p) => request.nextUrl.pathname.startsWith(p))) {
     if (!session) {
-      const loginUrl = new URL("/login", request.url);
+      const loginUrl = new URL("/auth", request.url);
       loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
     }
