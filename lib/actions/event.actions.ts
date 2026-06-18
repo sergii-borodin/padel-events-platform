@@ -7,7 +7,9 @@ import { Booking } from "@/database/booking.model";
 export const getSimilarEventBySlug = async (slug: string) => {
   try {
     await connectDB();
-    const event = await Event.findOne({ slug }).lean<IEvent & { _id: string }>();
+    const event = await Event.findOne({ slug }).lean<
+      IEvent & { _id: string }
+    >();
 
     if (!event) {
       return [];

@@ -159,6 +159,12 @@ const eventSchema = new Schema<IEvent, EventModel>(
       min: [1, "maxParticipants must be at least 1."],
     },
 
+    bookingsCount: {
+      type: Number,
+      default: 0,
+      min: [0, "bookingsCount must be at least 0."],
+    },
+
     duration: {
       type: Number,
       required: [true, "duration is required."],

@@ -7,6 +7,14 @@ import { useRouter } from "next/navigation";
 const CreateNewEvent = () => {
   const router = useRouter();
   const { user, loading, login, signup, logout } = useAuth();
+
+  // const createEventHandler = async () => {
+  //   await fetch("/api/events", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "multipart/form-data" },
+  //     body: JSON.stringify(),
+  //   });
+  // };
   return <>{user ? <CreateEventForm /> : router.push("/auth")}</>;
 };
 

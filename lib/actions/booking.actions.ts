@@ -1,8 +1,22 @@
 "use server";
 
-import { Booking } from "@/database";
+import { Types } from "mongoose";
 
+import { Booking, Event } from "@/database";
 import connectDB from "@/lib/mongodb";
+
+type CreateBookingResult =
+  | { success: true }
+  | {
+      success: false;
+      reason: "duplicate" | "event-not-found" | "full" | "invalid-event" | "error";
+    };
+
+const isDuplicateKeyError = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  (error as { code?: unknown }).code === 11000;
 
 export const createBooking = async ({
   eventId,
@@ -10,15 +24,75 @@ export const createBooking = async ({
 }: {
   eventId: string;
   email: string;
-}) => {
+}): Promise<CreateBookingResult> => {
+  if (!Types.ObjectId.isValid(eventId)) {
+    return { success: false, reason: "invalid-event" };
+  }
+
+  const eventObjectId = new Types.ObjectId(eventId);
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
-    await connectDB();
+    const db = await connectDB();
+    const session = await db.startSession();
 
-    await Booking.create({ eventId, email });
+    let result: CreateBookingResult = { success: false, reason: "error" };
 
-    return { success: true };
+    try {
+      await session.withTransaction(async () => {
+        const event = await Event.findById(eventObjectId)
+          .select("maxParticipants")
+          .session(session);
+
+        if (!event) {
+          result = { success: false, reason: "event-not-found" };
+          return;
+        }
+
+        const existingBooking = await Booking.exists({
+          eventId: eventObjectId,
+          email: normalizedEmail,
+        }).session(session);
+
+        if (existingBooking) {
+          result = { success: false, reason: "duplicate" };
+          return;
+        }
+
+        const bookingsCount = await Booking.countDocuments({
+          eventId: eventObjectId,
+        }).session(session);
+
+        if (bookingsCount >= event.maxParticipants) {
+          result = { success: false, reason: "full" };
+          return;
+        }
+
+        await Event.updateOne(
+          { _id: eventObjectId },
+          { $set: { bookingsCount: bookingsCount + 1 } },
+          { session },
+        );
+
+        await Booking.create(
+          [{ eventId: eventObjectId, email: normalizedEmail }],
+          { session },
+        );
+
+        result = { success: true };
+      });
+    } finally {
+      await session.endSession();
+    }
+
+    return result;
   } catch (e) {
     console.error("create booking failed", e);
-    return { success: false };
+
+    if (isDuplicateKeyError(e)) {
+      return { success: false, reason: "duplicate" };
+    }
+
+    return { success: false, reason: "error" };
   }
 };
