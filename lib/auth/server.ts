@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { adminAuth } from "@/lib/firebase/admin";
+import { getAdminAuth } from "@/lib/firebase/admin";
 
 const SESSION_COOKIE_NAME = "session";
 
@@ -8,7 +8,7 @@ export async function getCurrentUser() {
   if (!session) return null;
 
   try {
-    const decoded = await adminAuth.verifySessionCookie(session, true);
+    const decoded = await getAdminAuth().verifySessionCookie(session, true);
     return decoded; // uid, email, etc.
   } catch {
     return null;
