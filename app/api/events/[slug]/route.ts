@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
 import { Error as MongooseError } from "mongoose";
 
-import { Event, type IEvent } from "@/database/event.model";
-import { Booking } from "@/database/booking.model";
-import connectDB from "@/lib/mongodb";
+import { getEventBySlug } from "@/lib/actions/event.actions";
 
 type RouteContext = {
   params: Promise<{
     slug: string;
   }>;
-};
-
-type EventDocument = IEvent & {
-  _id: string;
 };
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -38,31 +32,7 @@ export async function GET(_request: Request, context: RouteContext) {
     // Next.js 15+ passes params as a Promise — must await before use.
     const { slug: rawSlug } = await context.params;
     const slug = normalizeAndValidateSlug(rawSlug);
-
-    await connectDB();
-
-    const [event] = await Event.aggregate<EventDocument>([
-      { $match: { slug } },
-      {
-        $lookup: {
-          from: Booking.collection.name,
-          localField: "_id",
-          foreignField: "eventId",
-          as: "bookings",
-        },
-      },
-      {
-        $addFields: {
-          bookingsCount: { $size: "$bookings" },
-        },
-      },
-      {
-        $project: {
-          bookings: 0,
-        },
-      },
-      { $limit: 1 },
-    ]);
+    const event = await getEventBySlug(slug);
 
     if (!event) {
       return NextResponse.json(

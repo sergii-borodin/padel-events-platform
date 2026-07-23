@@ -2,11 +2,11 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import BookEvent from "@/app/components/BookEvent";
 import SimilarEventCard from "@/app/components/SimilarEventCard";
-import { getSimilarEventBySlug } from "@/lib/actions/event.actions";
+import {
+  getEventBySlug,
+  getSimilarEventBySlug,
+} from "@/lib/actions/event.actions";
 import { IEvent } from "@/database/event.model";
-import { cacheLife } from "next/cache";
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const EventDetailItem = ({
   icon,
@@ -42,35 +42,29 @@ const EventDetailsPage = async ({
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
-  const response = await fetch(`${BASE_URL}/api/events/${slug}`, {
-    cache: "no-store",
-  });
+  const event = await getEventBySlug(slug);
 
-  if (!response.ok) return notFound();
+  if (!event?.description) return notFound();
 
   const {
-    event: {
-      _id,
-      title,
-      description,
-      overview,
-      image,
-      venue,
-      location,
-      date,
-      time,
-      venueType,
-      minRating,
-      maxRating,
-      maxParticipants,
-      bookingsCount = 0,
-      organizer,
-      tags,
-      duration,
-    },
-  } = (await response.json()) as { event: IEvent & { _id: string } };
-
-  if (!description) return notFound();
+    _id,
+    title,
+    description,
+    overview,
+    image,
+    venue,
+    location,
+    date,
+    time,
+    venueType,
+    minRating,
+    maxRating,
+    maxParticipants,
+    bookingsCount = 0,
+    organizer,
+    tags,
+    duration,
+  } = event;
 
   const getGameTimeRange = (
     startTime: string,
