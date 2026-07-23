@@ -41,8 +41,6 @@ const EventDetailsPage = async ({
 }: {
   params: Promise<{ slug: string }>;
 }) => {
-  "use cache";
-  cacheLife("hours");
   const { slug } = await params;
   const response = await fetch(`${BASE_URL}/api/events/${slug}`, {
     cache: "no-store",

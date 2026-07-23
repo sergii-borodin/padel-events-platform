@@ -311,4 +311,95 @@
       }
     }
   }
+
+  .padel-loader-stage {
+    @apply relative;
+  }
+
+  .padel-loader-svg {
+    overflow: visible;
+  }
+
+  .padel-loader-overlay {
+    @apply fixed inset-0 z-[100] flex items-center justify-center bg-[#030708]/70 backdrop-blur-sm;
+  }
+
+  .padel-loader-overlay .padel-loader {
+    @apply py-0;
+  }
+
+  .padel-loader-glow {
+    transform-origin: 80px 132px;
+    animation: padel-glow 1.4s ease-in-out infinite;
+  }
+
+  .padel-loader-racket {
+    transform-origin: 80px 120px;
+    animation: padel-catch 1.4s ease-in-out infinite;
+  }
+
+  .padel-loader-ball {
+    transform-origin: 80px 24px;
+    animation: padel-toss 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+}
+
+@keyframes padel-toss {
+  0% {
+    transform: translate(0, -52px) scale(0.85);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(0, 28px) scale(1);
+    opacity: 1;
+  }
+  58% {
+    transform: translate(0, 22px) scale(0.92);
+    opacity: 1;
+  }
+  72% {
+    transform: translate(0, 28px) scale(1);
+    opacity: 1;
+  }
+  88%,
+  100% {
+    transform: translate(0, 28px) scale(0.7);
+    opacity: 0;
+  }
+}
+
+@keyframes padel-catch {
+  0%,
+  35% {
+    transform: rotate(-8deg) translateY(0);
+  }
+  48% {
+    transform: rotate(6deg) translateY(3px);
+  }
+  58% {
+    transform: rotate(-2deg) translateY(-2px);
+  }
+  72%,
+  100% {
+    transform: rotate(-8deg) translateY(0);
+  }
+}
+
+@keyframes padel-glow {
+  0%,
+  40% {
+    transform: scaleX(0.75);
+    opacity: 0.1;
+  }
+  55% {
+    transform: scaleX(1.15);
+    opacity: 0.28;
+  }
+  100% {
+    transform: scaleX(0.75);
+    opacity: 0.1;
+  }
 }

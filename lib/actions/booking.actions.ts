@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
 import { Booking, Event } from "@/database";
@@ -9,7 +10,12 @@ type CreateBookingResult =
   | { success: true }
   | {
       success: false;
-      reason: "duplicate" | "event-not-found" | "full" | "invalid-event" | "error";
+      reason:
+        | "duplicate"
+        | "event-not-found"
+        | "full"
+        | "invalid-event"
+        | "error";
     };
 
 const isDuplicateKeyError = (error: unknown) =>
@@ -21,9 +27,11 @@ const isDuplicateKeyError = (error: unknown) =>
 export const createBooking = async ({
   eventId,
   email,
+  slug,
 }: {
   eventId: string;
   email: string;
+  slug: string;
 }): Promise<CreateBookingResult> => {
   if (!Types.ObjectId.isValid(eventId)) {
     return { success: false, reason: "invalid-event" };
@@ -80,6 +88,11 @@ export const createBooking = async ({
         );
 
         result = { success: true };
+
+        if (result.success) {
+          revalidatePath(`/events/${slug}`);
+          revalidatePath("/events");
+        }
       });
     } finally {
       await session.endSession();
