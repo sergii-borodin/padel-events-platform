@@ -43,44 +43,87 @@ const PadelCatcherLoader = ({
             opacity="0.18"
           />
 
+          {/* Padel racket — solid perforated face, short thick grip */}
           <g className="padel-loader-racket">
-            <rect
-              x="72"
-              y="88"
-              width="16"
-              height="42"
-              rx="5"
+            {/* Handle / grip */}
+            <path
+              d="M72 96 C72 92, 74 90, 80 90 C86 90, 88 92, 88 96 L86 138 C86 142, 83 144, 80 144 C77 144, 74 142, 74 138 Z"
               fill="#1a2a30"
               stroke="var(--primary)"
               strokeWidth="2"
             />
-            <rect x="76" y="94" width="8" height="28" rx="3" fill="#243840" />
+            {/* Grip wrap lines */}
+            <path
+              d="M75 104 H85 M75 112 H85 M75 120 H85 M75 128 H85"
+              stroke="#243840"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            {/* Butt cap */}
             <ellipse
               cx="80"
-              cy="52"
-              rx="36"
-              ry="42"
+              cy="144"
+              rx="8"
+              ry="4"
               fill="#0f1c20"
               stroke="var(--primary)"
-              strokeWidth="3.5"
+              strokeWidth="1.5"
             />
-            <ellipse
-              cx="80"
-              cy="52"
-              rx="28"
-              ry="34"
-              stroke="var(--color-blue)"
-              strokeWidth="1.25"
-              opacity="0.55"
-            />
+
+            {/* Thick frame + solid face (teardrop padel shape) */}
             <path
-              d="M58 36 H102 M58 48 H102 M58 60 H102 M58 72 H102 M66 22 V82 M80 18 V86 M94 22 V82"
+              d="M80 10
+                 C102 10, 118 28, 118 52
+                 C118 72, 108 86, 96 92
+                 L88 96 L72 96 L64 92
+                 C52 86, 42 72, 42 52
+                 C42 28, 58 10, 80 10 Z"
+              fill="#0f1c20"
               stroke="var(--primary)"
-              strokeWidth="1"
-              opacity="0.35"
+              strokeWidth="4"
+              strokeLinejoin="round"
             />
+            {/* Inner face plate */}
+            <path
+              d="M80 18
+                 C98 18, 110 32, 110 50
+                 C110 66, 102 78, 92 84
+                 L80 88 L68 84
+                 C58 78, 50 66, 50 50
+                 C50 32, 62 18, 80 18 Z"
+              fill="#152428"
+              stroke="var(--color-blue)"
+              strokeWidth="1"
+              opacity="0.9"
+            />
+
+            {/* Perforated holes — signature padel face */}
+            <g fill="#030708">
+              {/* Row 1 */}
+              <circle cx="68" cy="32" r="3.2" />
+              <circle cx="80" cy="30" r="3.2" />
+              <circle cx="92" cy="32" r="3.2" />
+              {/* Row 2 */}
+              <circle cx="62" cy="44" r="3.2" />
+              <circle cx="74" cy="42" r="3.2" />
+              <circle cx="86" cy="42" r="3.2" />
+              <circle cx="98" cy="44" r="3.2" />
+              {/* Row 3 */}
+              <circle cx="62" cy="56" r="3.2" />
+              <circle cx="74" cy="54" r="3.2" />
+              <circle cx="86" cy="54" r="3.2" />
+              <circle cx="98" cy="56" r="3.2" />
+              {/* Row 4 */}
+              <circle cx="68" cy="66" r="3.2" />
+              <circle cx="80" cy="68" r="3.2" />
+              <circle cx="92" cy="66" r="3.2" />
+              {/* Row 5 */}
+              <circle cx="74" cy="78" r="2.8" />
+              <circle cx="86" cy="78" r="2.8" />
+            </g>
           </g>
 
+          {/* Padel ball */}
           <g className="padel-loader-ball">
             <circle cx="80" cy="24" r="10" fill="var(--primary)" />
             <path
