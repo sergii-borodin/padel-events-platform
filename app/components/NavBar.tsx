@@ -6,8 +6,14 @@ const NavBar = () => {
     <header>
       <nav>
         <Link href={"/"} className="logo">
+          <Image
+            src={"/icons/logo-nav.png"}
+            alt="UA Padel Denmark"
+            width={40}
+            height={48}
+            priority
+          />
           <p>PadelHub</p>
-          <Image src={"/icons/logo.png"} alt="logo" width={24} height={24} />
         </Link>
         <ul>
           <li>

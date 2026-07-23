@@ -156,10 +156,14 @@
     }
 
     .logo {
-      @apply flex flex-row items-center gap-2;
+      @apply flex flex-row items-center gap-3;
 
       p {
         @apply text-xl font-bold italic max-sm:hidden;
+      }
+
+      img {
+        @apply h-12 w-auto rounded-sm object-contain;
       }
     }
 
