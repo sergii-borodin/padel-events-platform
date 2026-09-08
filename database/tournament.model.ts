@@ -32,6 +32,7 @@ export interface ITournamentPlayer {
   id: string;
   name: string;
   bookingId?: string;
+  userId?: string;
   firstName?: string;
   lastName?: string;
   fieldName?: string;
@@ -120,6 +121,7 @@ const playerSchema = new Schema<ITournamentPlayer>(
     id: { type: String, required: true },
     name: { type: String, required: true, trim: true },
     bookingId: { type: String, required: false },
+    userId: { type: String, required: false, trim: true },
     firstName: { type: String, required: false, trim: true },
     lastName: { type: String, required: false, trim: true },
     fieldName: { type: String, required: false, trim: true },

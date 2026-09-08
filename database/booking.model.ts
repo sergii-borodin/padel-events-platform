@@ -13,6 +13,7 @@ import {
 
 export interface IBooking {
   eventId: Types.ObjectId;
+  userId?: Types.ObjectId;
   firstName: string;
   lastName?: string;
   email: string;
@@ -34,6 +35,13 @@ const bookingSchema = new Schema<IBooking, BookingModel>(
       type: Schema.Types.ObjectId,
       ref: "Event",
       required: [true, "eventId is required."],
+      index: true,
+    },
+
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
       index: true,
     },
 
@@ -96,6 +104,11 @@ bookingSchema.pre("save", function (this: HydratedDocument<IBooking>) {
 /* =========================
    Model export
 ========================= */
+
+// In development, drop the cached model so schema/hook edits apply after HMR.
+if (process.env.NODE_ENV !== "production" && models.Booking) {
+  delete models.Booking;
+}
 
 export const Booking =
   (models.Booking as BookingModel | undefined) ??

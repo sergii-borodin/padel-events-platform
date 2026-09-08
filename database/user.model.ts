@@ -9,6 +9,11 @@ export interface IUser {
   email: string;
   firstName: string;
   lastName: string;
+  rating: number | null;
+  ratingPoints: number;
+  ratingPossible: number;
+  eventsPlayed: number;
+  careerWins: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +56,42 @@ const userSchema = new Schema<IUser, UserModel>(
       required: [true, "lastName is required."],
       trim: true,
     },
+
+    rating: {
+      type: Number,
+      required: false,
+      default: null,
+      min: [0, "rating must be at least 0."],
+      max: [1000, "rating must be at most 1000."],
+    },
+
+    ratingPoints: {
+      type: Number,
+      required: false,
+      default: 0,
+      min: [0, "ratingPoints must be at least 0."],
+    },
+
+    ratingPossible: {
+      type: Number,
+      required: false,
+      default: 0,
+      min: [0, "ratingPossible must be at least 0."],
+    },
+
+    eventsPlayed: {
+      type: Number,
+      required: false,
+      default: 0,
+      min: [0, "eventsPlayed must be at least 0."],
+    },
+
+    careerWins: {
+      type: Number,
+      required: false,
+      default: 0,
+      min: [0, "careerWins must be at least 0."],
+    },
   },
   {
     timestamps: true,
@@ -64,6 +105,7 @@ const userSchema = new Schema<IUser, UserModel>(
 
 userSchema.index({ firebaseUid: 1 }, { unique: true });
 userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ rating: -1 }, { sparse: true });
 
 /* =========================
    Pre-save hook
