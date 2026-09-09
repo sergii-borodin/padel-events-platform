@@ -6,10 +6,22 @@ import { createBooking } from "@/lib/actions/booking.actions";
 import posthog from "posthog-js";
 import PadelCatcherLoader from "@/app/components/PadelCatcherLoader";
 
-const BookEvent = ({ eventId, slug }: { eventId: string; slug: string }) => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+const BookEvent = ({
+  eventId,
+  slug,
+  defaultFirstName = "",
+  defaultLastName = "",
+  defaultEmail = "",
+}: {
+  eventId: string;
+  slug: string;
+  defaultFirstName?: string;
+  defaultLastName?: string;
+  defaultEmail?: string;
+}) => {
+  const [firstName, setFirstName] = useState(defaultFirstName);
+  const [lastName, setLastName] = useState(defaultLastName);
+  const [email, setEmail] = useState(defaultEmail);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

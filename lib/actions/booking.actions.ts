@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
 import { Booking, Event } from "@/database";
+import { getCurrentMongoUserId } from "@/lib/auth/server";
 import connectDB from "@/lib/mongodb";
 
 type CreateBookingResult =
@@ -82,6 +83,8 @@ export const createBooking = async ({
     return { success: false, reason: "error" };
   }
 
+  const userId = await getCurrentMongoUserId();
+
   try {
     const db = await connectDB();
     const session = await db.startSession();
@@ -128,6 +131,7 @@ export const createBooking = async ({
           [
             {
               eventId: eventObjectId,
+              ...(userId ? { userId } : {}),
               firstName: normalizedFirstName,
               lastName: normalizedLastName,
               email: normalizedEmail,

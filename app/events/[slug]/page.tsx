@@ -2,7 +2,9 @@ import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Image from "next/image";
-import BookEvent from "@/app/components/BookEvent";
+import BookEventSlot, {
+  BookEventFallback,
+} from "@/app/components/BookEventSlot";
 import SimilarEventCard from "@/app/components/SimilarEventCard";
 import StartTournamentButton from "@/app/components/StartTournamentButton";
 import {
@@ -93,19 +95,33 @@ const EventDetailsPage = ({
   </Suspense>
 );
 
+async function getCachedEventDetails(slug: string) {
+  "use cache";
+  cacheLife("minutes");
+
+  const event = await getEventBySlug(slug);
+  if (!event?.description) return null;
+
+  const [similarEvents, participants, tournamentStatus] = await Promise.all([
+    getSimilarEventBySlug(slug),
+    getEventParticipants(event._id),
+    getTournamentStatusBySlug(slug),
+  ]);
+
+  return { event, similarEvents, participants, tournamentStatus };
+}
+
 async function EventDetailsContent({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  "use cache";
-  cacheLife("minutes");
-
   const { slug } = await params;
-  const event = await getEventBySlug(slug);
+  const cached = await getCachedEventDetails(slug);
 
-  if (!event?.description) return notFound();
+  if (!cached) return notFound();
 
+  const { event, similarEvents, participants, tournamentStatus } = cached;
   const {
     _id,
     title,
@@ -127,11 +143,6 @@ async function EventDetailsContent({
   } = event;
 
   const bookings = bookingsCount;
-  const [similarEvents, participants, tournamentStatus] = await Promise.all([
-    getSimilarEventBySlug(slug),
-    getEventParticipants(_id),
-    getTournamentStatusBySlug(slug),
-  ]);
 
   return (
     <>
@@ -226,7 +237,9 @@ async function EventDetailsContent({
                   ) : (
                     <p className="text-sm">Be the first to book your spot!</p>
                   )}
-                  <BookEvent eventId={_id} slug={slug} />
+                  <Suspense fallback={<BookEventFallback />}>
+                    <BookEventSlot eventId={_id} slug={slug} />
+                  </Suspense>
                 </>
               ) : (
                 <p className="text-red-500">No available spots left</p>

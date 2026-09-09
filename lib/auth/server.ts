@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { Types } from "mongoose";
 import { getAdminAuth } from "@/lib/firebase/admin";
 import { User } from "@/database";
 import connectDB from "@/lib/mongodb";
@@ -21,6 +22,66 @@ export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   return user;
+}
+
+export async function getCurrentMongoUserId(): Promise<Types.ObjectId | null> {
+  const decoded = await getCurrentUser();
+  const firebaseUid = decoded?.uid?.trim();
+  if (!firebaseUid) return null;
+
+  try {
+    await connectDB();
+
+    const user = await User.findOne({ firebaseUid })
+      .select("_id")
+      .lean<{ _id: unknown } | null>();
+
+    if (!user?._id) return null;
+
+    return user._id instanceof Types.ObjectId
+      ? user._id
+      : new Types.ObjectId(String(user._id));
+  } catch (error) {
+    console.error("getCurrentMongoUserId failed", error);
+    return null;
+  }
+}
+
+export type BookingPrefill = {
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
+export async function getCurrentBookingPrefill(): Promise<BookingPrefill | null> {
+  const decoded = await getCurrentUser();
+  const firebaseUid = decoded?.uid?.trim();
+  if (!firebaseUid) return null;
+
+  try {
+    await connectDB();
+
+    const user = await User.findOne({ firebaseUid })
+      .select("firstName lastName email")
+      .lean<{
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+      } | null>();
+
+    if (!user) return null;
+
+    const firstName = user.firstName?.trim() ?? "";
+    const lastName = user.lastName?.trim() ?? "";
+    const email = user.email?.trim().toLowerCase() ?? "";
+
+    if (!firstName && !lastName && !email) return null;
+
+    return { firstName, lastName, email };
+  } catch (error) {
+    console.error("getCurrentBookingPrefill failed", error);
+    return null;
+  }
 }
 
 export type OrganizerDisplayName =
