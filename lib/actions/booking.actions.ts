@@ -29,6 +29,7 @@ export type EventParticipant = {
   id: string;
   firstName: string;
   lastName: string;
+  userId?: string;
 };
 
 export const getEventParticipants = async (
@@ -42,14 +43,22 @@ export const getEventParticipants = async (
     await connectDB();
 
     const bookings = await Booking.find({ eventId: new Types.ObjectId(eventId) })
-      .select("firstName lastName")
+      .select("firstName lastName userId")
       .sort({ createdAt: 1 })
-      .lean<Array<{ _id: unknown; firstName?: string; lastName?: string }>>();
+      .lean<
+        Array<{
+          _id: unknown;
+          firstName?: string;
+          lastName?: string;
+          userId?: unknown;
+        }>
+      >();
 
     return bookings.map((booking) => ({
       id: String(booking._id),
       firstName: booking.firstName?.trim() ?? "",
       lastName: booking.lastName?.trim() ?? "",
+      ...(booking.userId ? { userId: String(booking.userId) } : {}),
     }));
   } catch (e) {
     console.error("get event participants failed", e);

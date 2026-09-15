@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
-import { Event, Tournament } from "@/database";
+import { Event, Tournament, Booking } from "@/database";
 import type {
   FeedbackTone,
   ILineupFieldSnapshot,
@@ -31,6 +31,7 @@ import {
   isRoundComplete,
 } from "@/lib/tournament";
 import { generatePlayerRecaps } from "@/lib/tournament/generateRecaps";
+import { recomputeUserRatings } from "@/lib/rating/recompute";
 import {
   courtsFromLineupFields,
   isRealLineupPlayer,
@@ -214,12 +215,71 @@ function validateSettings(
 }
 
 function toTournamentPlayers(
-  participants: Array<{ id: string; firstName: string; lastName: string }>,
+  participants: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    userId?: string;
+  }>,
   savedPlayers?: LineupStoredPlayer[],
 ): ITournamentPlayer[] {
   return mergeLineupWithBookings(participants, savedPlayers).filter(
     isRealLineupPlayer,
   );
+}
+
+function serializeBookingUserId(value: unknown): string | undefined {
+  if (!value) return undefined;
+  const userId = String(value).trim();
+  return userId || undefined;
+}
+
+function withoutPlayerUserId(player: ITournamentPlayer): ITournamentPlayer {
+  if (!player.userId) return player;
+  const rest = { ...player };
+  delete rest.userId;
+  return rest;
+}
+
+async function attachBookingUserIds(
+  players: ITournamentPlayer[],
+): Promise<ITournamentPlayer[]> {
+  const bookingIds = [
+    ...new Set(
+      players
+        .map((player) => player.bookingId?.trim())
+        .filter((id): id is string => {
+          if (!id) return false;
+          return Types.ObjectId.isValid(id);
+        }),
+    ),
+  ];
+
+  if (bookingIds.length === 0) {
+    return players.map(withoutPlayerUserId);
+  }
+
+  const bookings = await Booking.find({
+    _id: { $in: bookingIds.map((id) => new Types.ObjectId(id)) },
+  })
+    .select("userId")
+    .lean<Array<{ _id: unknown; userId?: unknown }>>();
+
+  const userIdByBookingId = new Map(
+    bookings.map((booking) => [
+      String(booking._id),
+      serializeBookingUserId(booking.userId),
+    ]),
+  );
+
+  return players.map((player) => {
+    const userId = player.bookingId
+      ? userIdByBookingId.get(player.bookingId)
+      : undefined;
+
+    if (!userId) return withoutPlayerUserId(player);
+    return { ...player, userId };
+  });
 }
 
 export async function getTournamentBySlug(
@@ -342,7 +402,9 @@ export async function saveTournamentLineup({
       };
     });
 
-    const players = lineupSnapshotsToPlayers(lineupFields);
+    const players = await attachBookingUserIds(
+      lineupSnapshotsToPlayers(lineupFields),
+    );
     const courtsFromLineup = courtsFromLineupFields(lineupFields);
     const courts =
       courtsFromLineup.length > 0
@@ -416,10 +478,11 @@ export async function createOrUpdateTournamentSetup({
 
     const participants = await getEventParticipants(String(event._id));
     const existing = await Tournament.findOne({ slug });
-    const players =
+    const players = await attachBookingUserIds(
       existing?.lineupFields?.length
         ? lineupSnapshotsToPlayers(existing.lineupFields)
-        : toTournamentPlayers(participants, existing?.players);
+        : toTournamentPlayers(participants, existing?.players),
+    );
 
     if (players.length < 4) {
       return {
@@ -513,6 +576,9 @@ export async function startTournament(
     if (!canStart(tournament.players.length, tournament.courts.length)) {
       return { success: false, reason: "not-enough-players" };
     }
+
+    tournament.players = await attachBookingUserIds(tournament.players);
+    tournament.markModified("players");
 
     const round = generateOpeningRound({
       players: tournament.players,
@@ -826,11 +892,23 @@ export async function finishTournament(
       };
     }
 
+    tournament.players = await attachBookingUserIds(tournament.players);
+    tournament.markModified("players");
+
     await writePlayerRecaps(tournament, tone);
     tournament.status = "finished";
     await tournament.save();
 
+    try {
+      await recomputeUserRatings(
+        tournament.players.map((player) => player.userId),
+      );
+    } catch (error) {
+      console.error("recomputeUserRatings failed", error);
+    }
+
     revalidateTournamentPaths(slug);
+    revalidatePath("/rating");
     return { success: true, data: toDTO(tournament.toObject()) };
   } catch (error) {
     console.error("finishTournament failed", error);

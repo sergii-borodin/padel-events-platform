@@ -4,6 +4,7 @@ type NamedParticipant = {
   id: string;
   firstName: string;
   lastName: string;
+  userId?: string;
 };
 
 export type LineupPlayerInput = {
@@ -17,6 +18,7 @@ export type LineupStoredPlayer = {
   id?: string;
   name: string;
   bookingId?: string;
+  userId?: string;
   firstName?: string;
   lastName?: string;
   fieldName?: string;
@@ -66,7 +68,7 @@ export function snapshotPlayers(
 ): Array<
   Required<
     Pick<LineupStoredPlayer, "id" | "name" | "firstName" | "lastName">
-  > & { bookingId: string; fieldName?: string }
+  > & { bookingId: string; userId?: string; fieldName?: string }
 > {
   return participants.map((participant) => {
     const firstName = participant.firstName.trim();
@@ -78,6 +80,7 @@ export function snapshotPlayers(
       firstName,
       lastName,
       bookingId: participant.id,
+      ...(participant.userId ? { userId: participant.userId } : {}),
     };
   });
 }
@@ -88,6 +91,7 @@ export function mergeLineupWithBookings(
 ): Array<
   Required<Pick<LineupStoredPlayer, "id" | "name" | "firstName" | "lastName">> & {
     bookingId?: string;
+    userId?: string;
     fieldName?: string;
   }
 > {
@@ -102,7 +106,7 @@ export function mergeLineupWithBookings(
   const players: Array<
     Required<
       Pick<LineupStoredPlayer, "id" | "name" | "firstName" | "lastName">
-    > & { bookingId?: string; fieldName?: string }
+    > & { bookingId?: string; userId?: string; fieldName?: string }
   > = [];
 
   for (const saved of savedPlayers) {
@@ -123,6 +127,7 @@ export function mergeLineupWithBookings(
         lastName,
         fieldName,
         bookingId: saved.bookingId,
+        ...(booking.userId ? { userId: booking.userId } : {}),
       });
       continue;
     }
