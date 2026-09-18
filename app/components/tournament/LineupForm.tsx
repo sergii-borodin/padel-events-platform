@@ -10,6 +10,7 @@ import {
   createEmptyLineupField,
   isRealLineupPlayer,
   moveLineupPlayerToCourt,
+  sortLineupFieldsByRating,
   swapLineupPlayers,
   toLineupFieldSnapshots,
   type LineupField,
@@ -17,6 +18,7 @@ import {
   type LineupStoredPlayer,
 } from "@/lib/tournament/lineup";
 import { PLAYERS_PER_COURT } from "@/lib/tournament/utils";
+import type { PlayerRatingSeed } from "@/lib/rating/seed";
 
 const TEAM_LABELS = ["Team A", "Team A", "Team B", "Team B"] as const;
 
@@ -27,6 +29,7 @@ export default function LineupForm({
   savedFields,
   maxParticipants,
   readOnly = false,
+  playerRatings = {},
 }: {
   slug: string;
   participants: EventParticipant[];
@@ -34,6 +37,7 @@ export default function LineupForm({
   savedFields?: LineupFieldSnapshotInput[];
   maxParticipants: number;
   readOnly?: boolean;
+  playerRatings?: Record<string, PlayerRatingSeed>;
 }) {
   const router = useRouter();
   const [fields, setFields] = useState<LineupField[]>(() =>
@@ -239,6 +243,22 @@ export default function LineupForm({
     movePlayer(index, toCourt * PLAYERS_PER_COURT + slot);
   };
 
+  const handleSortByRating = () => {
+    if (readOnly) return;
+    const ratings = new Map(Object.entries(playerRatings));
+    const userIdByBookingId = new Map<string, string>();
+    for (const participant of participants) {
+      if (participant.userId) {
+        userIdByBookingId.set(participant.id, participant.userId);
+      }
+    }
+    setFields((prev) =>
+      sortLineupFieldsByRating(prev, ratings, userIdByBookingId),
+    );
+    setError(null);
+    setSuccess("Sorted highest rating onto Court 1. Save to keep this order.");
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (readOnly) return;
@@ -290,7 +310,8 @@ export default function LineupForm({
         <h2>Player lineup</h2>
         <p className="tournament-panel__subtitle">
           Four players make a court. Same side are partners for a custom start.
-          Drag a player onto another court to move them.
+          Drag a player onto another court to move them. Sort by rating fills
+          Court 1 with the highest rated players.
         </p>
         <p className="lineup-form__count">
           {filledCount} of {maxParticipants} players · {fields.length} court
@@ -499,13 +520,22 @@ export default function LineupForm({
       </div>
 
       {!readOnly && (
-        <button
-          type="button"
-          className="tournament-button tournament-button--ghost"
-          onClick={addField}
-          disabled={!canAddAnotherField}>
-          Add court
-        </button>
+        <div className="lineup-form__toolbar">
+          <button
+            type="button"
+            className="tournament-button tournament-button--ghost"
+            onClick={addField}
+            disabled={!canAddAnotherField}>
+            Add court
+          </button>
+          <button
+            type="button"
+            className="tournament-button tournament-button--ghost"
+            onClick={handleSortByRating}
+            disabled={filledCount < 2}>
+            Sort by rating
+          </button>
+        </div>
       )}
 
       {error ? <p className="tournament-error">{error}</p> : null}

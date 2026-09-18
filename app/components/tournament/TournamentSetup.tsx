@@ -188,12 +188,15 @@ export default function TournamentSetup({
               aria-describedby="start-mode-hint">
               <option value="custom">Custom</option>
               <option value="random">Random</option>
+              <option value="byRating">By rating</option>
             </select>
           </label>
           <p id="start-mode-hint" className="tournament-hint">
             {startMode === "custom"
               ? "Start exactly as you set the courts and players in the lineup. Players on the same side of a court are partners."
-              : "Mix partners by moving players off the courts they belong to, into random positions."}
+              : startMode === "byRating"
+                ? "Fill Court 1 with the highest ratings, then Court 2, and so on. Unrated registered players sit below rated ones; guests last."
+                : "Mix partners by moving players off the courts they belong to, into random positions."}
           </p>
         </fieldset>
 
@@ -326,7 +329,7 @@ export default function TournamentSetup({
         {customStartBlocked && (
           <p className="tournament-error">
             Custom start needs at least one court with 4 players. Fill a court
-            or choose random.
+            or choose random or by rating.
           </p>
         )}
 

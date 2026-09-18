@@ -6,6 +6,7 @@ import PadelCatcherLoader from "@/app/components/PadelCatcherLoader";
 import { getEventParticipants } from "@/lib/actions/booking.actions";
 import { getEventBySlug } from "@/lib/actions/event.actions";
 import { getTournamentBySlug } from "@/lib/actions/tournament.actions";
+import { loadUserRatingSeeds } from "@/lib/rating/load";
 
 export default function TournamentLineupPage({
   params,
@@ -35,6 +36,10 @@ async function TournamentLineupContent({
     getTournamentBySlug(slug),
   ]);
 
+  const playerRatings = await loadUserRatingSeeds(
+    participants.map((participant) => participant.userId),
+  );
+
   const readOnly =
     tournament?.status === "playing" || tournament?.status === "finished";
 
@@ -58,6 +63,7 @@ async function TournamentLineupContent({
           savedFields={tournament?.lineupFields}
           maxParticipants={event.maxParticipants}
           readOnly={readOnly}
+          playerRatings={playerRatings}
         />
       </div>
     </section>

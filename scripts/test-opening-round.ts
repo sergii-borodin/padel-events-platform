@@ -91,4 +91,27 @@ assert.equal(incomplete.matches.length, 1);
 assert.equal(incomplete.matches[0].courtId, "court-nykredit");
 assert.deepEqual(incomplete.restingPlayerIds.sort(), ["p5", "p6"]);
 
+const ratedPlayers = players.map((player, index) => ({
+  ...player,
+  userId: index === 3 ? undefined : `user-${index + 1}`,
+}));
+
+const byRating = generateOpeningRound({
+  players: ratedPlayers,
+  courts,
+  lineupFields,
+  startMode: "byRating",
+  playerRatings: {
+    "user-8": { rating: 900, careerWins: 10 },
+    "user-1": { rating: 500, careerWins: 2 },
+    "user-2": { rating: 800, careerWins: 4 },
+    "user-3": { rating: null, careerWins: 0 },
+  },
+});
+
+assert.equal(byRating.matches.length, 2);
+assert.deepEqual(byRating.matches[0].teamA.playerIds, ["p8", "p2"]);
+assert.deepEqual(byRating.matches[0].teamB.playerIds, ["p1", "p6"]);
+assert.equal(byRating.matches[0].courtId, "court-nykredit");
+
 console.log("opening round: ok");

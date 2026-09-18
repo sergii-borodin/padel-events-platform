@@ -705,6 +705,10 @@
     @apply text-primary mt-2 text-sm font-medium;
   }
 
+  .lineup-form__toolbar {
+    @apply flex flex-wrap gap-2;
+  }
+
   .lineup-form__success {
     @apply text-sm font-medium text-emerald-400;
   }
@@ -1162,6 +1166,60 @@
 
   .standings-table__name {
     @apply font-medium;
+  }
+
+  .standings-table tr.is-you td {
+    @apply bg-primary/10;
+  }
+
+  .rating-page {
+    @apply mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8;
+  }
+
+  .rating-page__header {
+    @apply flex flex-col gap-2;
+
+    h1 {
+      @apply font-schibsted-grotesk text-3xl font-semibold text-light-100;
+    }
+
+    p {
+      @apply text-light-200 text-sm;
+    }
+  }
+
+  .rating-page h2 {
+    @apply font-schibsted-grotesk mb-3 text-xl font-semibold text-light-100;
+  }
+
+  .rating-card {
+    @apply bg-dark-100 border-dark-200 flex w-full flex-col gap-3 rounded-[10px] border px-5 py-6;
+  }
+
+  .rating-card__value {
+    @apply font-schibsted-grotesk text-5xl font-semibold text-primary;
+  }
+
+  .rating-card__scale,
+  .rating-card__empty,
+  .rating-card__last {
+    @apply text-light-200 text-sm;
+  }
+
+  .rating-card__last a {
+    @apply text-light-100 underline underline-offset-2;
+  }
+
+  .rating-card__stats {
+    @apply mt-2 grid grid-cols-3 gap-4;
+
+    dt {
+      @apply text-light-200 text-xs uppercase tracking-wide;
+    }
+
+    dd {
+      @apply text-light-100 mt-1 text-lg font-medium;
+    }
   }
 
   .round-standings-overlay {

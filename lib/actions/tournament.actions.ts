@@ -31,6 +31,7 @@ import {
   isRoundComplete,
 } from "@/lib/tournament";
 import { generatePlayerRecaps } from "@/lib/tournament/generateRecaps";
+import { loadUserRatingSeeds } from "@/lib/rating/load";
 import { recomputeUserRatings } from "@/lib/rating/recompute";
 import {
   courtsFromLineupFields,
@@ -203,7 +204,11 @@ function validateSettings(
     return "Invalid result sorting";
   }
 
-  if (settings.startMode !== "custom" && settings.startMode !== "random") {
+  if (
+    settings.startMode !== "custom" &&
+    settings.startMode !== "random" &&
+    settings.startMode !== "byRating"
+  ) {
     return "Invalid start mode";
   }
 
@@ -580,12 +585,17 @@ export async function startTournament(
     tournament.players = await attachBookingUserIds(tournament.players);
     tournament.markModified("players");
 
+    const playerRatings = await loadUserRatingSeeds(
+      tournament.players.map((player) => player.userId),
+    );
+
     const round = generateOpeningRound({
       players: tournament.players,
       courts: tournament.courts,
       lineupFields: tournament.lineupFields,
       startMode: tournament.startMode ?? "custom",
       roundIndex: 0,
+      playerRatings,
     });
 
     tournament.status = "playing";

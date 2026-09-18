@@ -1,4 +1,6 @@
 import { createId, PLAYERS_PER_COURT } from "@/lib/tournament/utils";
+import { comparePlayersByRating } from "@/lib/rating/seed";
+import type { PlayerRatingSeed } from "@/lib/rating/seed";
 
 type NamedParticipant = {
   id: string;
@@ -168,6 +170,45 @@ export function isRealLineupPlayer(player: {
   return Boolean(
     player.bookingId || player.firstName?.trim() || player.lastName?.trim(),
   );
+}
+
+export function sortLineupFieldsByRating(
+  fields: LineupField[],
+  ratingsByUserId: Map<string, PlayerRatingSeed>,
+  userIdByBookingId: Map<string, string>,
+): LineupField[] {
+  const realPlayers = fields.flatMap((field) =>
+    field.players.filter((player) => isRealLineupPlayer(player)),
+  );
+
+  realPlayers.sort((a, b) =>
+    comparePlayersByRating(
+      {
+        userId: a.bookingId
+          ? userIdByBookingId.get(a.bookingId)
+          : undefined,
+        name: playerDisplayName(a.firstName, a.lastName),
+      },
+      {
+        userId: b.bookingId
+          ? userIdByBookingId.get(b.bookingId)
+          : undefined,
+        name: playerDisplayName(b.firstName, b.lastName),
+      },
+      ratingsByUserId,
+    ),
+  );
+
+  let offset = 0;
+  return fields.map((field) => ({
+    ...field,
+    players: Array.from({ length: PLAYERS_PER_COURT }, () => {
+      const next = realPlayers[offset];
+      if (!next) return createEmptyLineupRow();
+      offset += 1;
+      return next;
+    }),
+  }));
 }
 
 export function createEmptyLineupRow(): LineupRow {

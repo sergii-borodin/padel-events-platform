@@ -3,6 +3,8 @@ import {
   playerDisplayName,
   type LineupFieldSnapshotInput,
 } from "./lineup";
+import { comparePlayersByRating } from "@/lib/rating/seed";
+import type { PlayerRatingSeed } from "@/lib/rating/seed";
 import type {
   EngineCourt,
   EngineMatch,
@@ -14,6 +16,7 @@ import { PLAYERS_PER_COURT, createId, shuffleInPlace } from "./utils";
 
 export type OpeningRoundPlayer = EnginePlayer & {
   bookingId?: string;
+  userId?: string;
   firstName?: string;
   lastName?: string;
   fieldName?: string;
@@ -25,6 +28,7 @@ export type OpeningRoundInput = {
   lineupFields?: LineupFieldSnapshotInput[];
   startMode: StartMode;
   roundIndex?: number;
+  playerRatings?: Record<string, PlayerRatingSeed>;
 };
 
 function matchName(player: OpeningRoundPlayer, firstName: string, lastName: string) {
@@ -230,6 +234,43 @@ export function groupsFromPlayers(
   }));
 }
 
+function generateByRatingOpeningRound(
+  players: OpeningRoundPlayer[],
+  courts: EngineCourt[],
+  playerRatings: Record<string, PlayerRatingSeed> | undefined,
+  roundIndex: number,
+): EngineRound {
+  const ratings = new Map(Object.entries(playerRatings ?? {}));
+  const ordered = [...players].sort((a, b) =>
+    comparePlayersByRating(a, b, ratings),
+  );
+
+  const playableCourtCount = Math.min(
+    courts.length,
+    Math.floor(ordered.length / PLAYERS_PER_COURT),
+  );
+  const playableSlots = playableCourtCount * PLAYERS_PER_COURT;
+
+  if (playableSlots < PLAYERS_PER_COURT) {
+    throw new Error("Not enough players or courts to generate a round");
+  }
+
+  const matches = Array.from({ length: playableCourtCount }, (_, index) => {
+    const start = index * PLAYERS_PER_COURT;
+    const playerIds = ordered
+      .slice(start, start + PLAYERS_PER_COURT)
+      .map((player) => player.id);
+    return matchFromFour(playerIds, courts[index].id);
+  });
+
+  return {
+    index: roundIndex,
+    isFinal: false,
+    matches,
+    restingPlayerIds: ordered.slice(playableSlots).map((player) => player.id),
+  };
+}
+
 export function generateOpeningRound(input: OpeningRoundInput): EngineRound {
   const {
     players,
@@ -237,7 +278,17 @@ export function generateOpeningRound(input: OpeningRoundInput): EngineRound {
     lineupFields,
     startMode,
     roundIndex = 0,
+    playerRatings,
   } = input;
+
+  if (startMode === "byRating") {
+    return generateByRatingOpeningRound(
+      players,
+      courts,
+      playerRatings,
+      roundIndex,
+    );
+  }
 
   const groups = lineupFields?.length
     ? assignLineupSlotsToPlayers(lineupFields, players)

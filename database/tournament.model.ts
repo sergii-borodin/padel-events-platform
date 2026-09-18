@@ -13,7 +13,7 @@ import {
 
 export type TournamentStatus = "setup" | "playing" | "finished";
 export type TournamentType = "americano" | "mexicano";
-export type StartMode = "custom" | "random";
+export type StartMode = "custom" | "random" | "byRating";
 export type PointsTo = 11 | 16 | 21 | 24 | 32;
 export type ResultSorting = "pointsFirst" | "winsFirst";
 export type FeedbackTone =
@@ -225,7 +225,7 @@ const tournamentSchema = new Schema<ITournament, TournamentModel>(
 
     startMode: {
       type: String,
-      enum: ["custom", "random"],
+      enum: ["custom", "random", "byRating"],
       default: "custom",
       required: false,
     },
