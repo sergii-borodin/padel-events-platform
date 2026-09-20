@@ -28,6 +28,7 @@ async function TournamentLineupContent({
 }) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
+  console.log("[lineup] slug", slug, "event", event?._id ?? null);
 
   if (!event) return notFound();
 
