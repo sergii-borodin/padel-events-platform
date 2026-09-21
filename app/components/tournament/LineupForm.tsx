@@ -61,7 +61,8 @@ export default function LineupForm({
 
   const filledCount = fields.reduce(
     (count, field) =>
-      count + field.players.filter((player) => isRealLineupPlayer(player)).length,
+      count +
+      field.players.filter((player) => isRealLineupPlayer(player)).length,
     0,
   );
   const canAddAnotherField =
@@ -138,7 +139,10 @@ export default function LineupForm({
     setFields((prev) => moveLineupPlayerToCourt(prev, fromIndex, courtIndex));
   };
 
-  const setDropTarget = (slotIndex: number | null, courtIndex: number | null) => {
+  const setDropTarget = (
+    slotIndex: number | null,
+    courtIndex: number | null,
+  ) => {
     dropSlotRef.current = slotIndex;
     dropCourtRef.current = courtIndex;
     setDropSlotIndex(slotIndex);
@@ -267,14 +271,11 @@ export default function LineupForm({
     setSuccess(null);
     startTransition(async () => {
       try {
-        const response = await fetch(
-          `/api/events/${slug}/tournament/lineup`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: toLineupFieldSnapshots(fields) }),
-          },
-        );
+        const response = await fetch(`/api/events/${slug}/tournament/lineup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fields: toLineupFieldSnapshots(fields) }),
+        });
         const result = (await response.json()) as {
           success: boolean;
           message?: string;
@@ -307,7 +308,6 @@ export default function LineupForm({
   return (
     <form className="tournament-panel lineup-form" onSubmit={handleSubmit}>
       <div>
-        <h2>Player lineup</h2>
         <p className="tournament-panel__subtitle">
           Four players make a court. Same side are partners for a custom start.
           Drag a player onto another court to move them. Sort by rating fills
