@@ -196,17 +196,23 @@
       bottom: 0;
     }
 
-    .nav-menu-toggle[aria-expanded="true"] .nav-menu-toggle__icon span:nth-child(1) {
+    .nav-menu-toggle[aria-expanded="true"]
+      .nav-menu-toggle__icon
+      span:nth-child(1) {
       top: 50%;
       margin-top: -1px;
       transform: rotate(45deg);
     }
 
-    .nav-menu-toggle[aria-expanded="true"] .nav-menu-toggle__icon span:nth-child(2) {
+    .nav-menu-toggle[aria-expanded="true"]
+      .nav-menu-toggle__icon
+      span:nth-child(2) {
       opacity: 0;
     }
 
-    .nav-menu-toggle[aria-expanded="true"] .nav-menu-toggle__icon span:nth-child(3) {
+    .nav-menu-toggle[aria-expanded="true"]
+      .nav-menu-toggle__icon
+      span:nth-child(3) {
       bottom: 50%;
       margin-bottom: -1px;
       transform: rotate(-45deg);
@@ -745,29 +751,29 @@
     @apply text-primary text-sm font-semibold;
   }
 
-  .lineup-court__surface {
-    @apply relative grid gap-3;
-  }
+  /* .lineup-court__surface {
+    @apply relative gap-3;
+  } */
 
-  .lineup-court__side {
+  /* .lineup-court__side {
     @apply flex flex-col gap-2;
-  }
+  } */
 
   .lineup-court__side-label {
     @apply text-light-200 text-[11px] font-medium tracking-wide uppercase;
   }
 
-  .lineup-court__slots {
+  /* .lineup-court__slots {
     @apply grid grid-cols-1 gap-2 sm:grid-cols-2;
-  }
+  } */
 
-  .lineup-court__net {
+  /* .lineup-court__net {
     @apply bg-primary/30 my-0.5 h-px w-full;
 
     span {
       @apply hidden;
     }
-  }
+  } */
 
   .lineup-slot {
     @apply bg-dark-200/70 border-dark-200 grid items-start gap-2 rounded-[8px] border px-2 py-2;

@@ -7,12 +7,17 @@ import type {
   TournamentDTO,
   TournamentSettingsInput,
 } from "@/lib/actions/tournament.actions";
-import type { PointsTo, ResultSorting, StartMode, TournamentType } from "@/lib/tournament";
+import type {
+  PointsTo,
+  ResultSorting,
+  StartMode,
+  TournamentType,
+} from "@/lib/tournament";
 import { PLAYERS_PER_COURT, restingCount } from "@/lib/tournament";
 import { playerDisplayName } from "@/lib/tournament/lineup";
 import PadelCourt from "./PadelCourt";
 
-const POINTS_OPTIONS: PointsTo[] = [11, 16, 21, 24, 32];
+const POINTS_OPTIONS: PointsTo[] = [24, 32];
 
 function groupPlayersByCourt(
   players: Array<{ name: string; fieldName?: string }>,
@@ -38,7 +43,10 @@ function groupPlayersByCourt(
   return courts.map((name, index) => ({
     name,
     players: players
-      .slice(index * PLAYERS_PER_COURT, index * PLAYERS_PER_COURT + PLAYERS_PER_COURT)
+      .slice(
+        index * PLAYERS_PER_COURT,
+        index * PLAYERS_PER_COURT + PLAYERS_PER_COURT,
+      )
       .map((player) => player.name),
   }));
 }
@@ -69,7 +77,7 @@ export default function TournamentSetup({
     initialSettings?.startMode ?? "custom",
   );
   const [pointsTo, setPointsTo] = useState<PointsTo>(
-    initialSettings?.pointsTo ?? 16,
+    initialSettings?.pointsTo ?? 24,
   );
   const [resultSorting, setResultSorting] = useState<ResultSorting>(
     initialSettings?.resultSorting ?? "pointsFirst",
@@ -99,8 +107,7 @@ export default function TournamentSetup({
     ? lineupCourts.map((court) => court.name)
     : courts;
   const resters = restingCount(playerCount, startCourts.length);
-  const needsRestConfirm =
-    resters > 0 || playerCount % PLAYERS_PER_COURT !== 0;
+  const needsRestConfirm = resters > 0 || playerCount % PLAYERS_PER_COURT !== 0;
   const fullCourts = lineupCourts.filter(
     (court) => court.players.length === PLAYERS_PER_COURT,
   ).length;
@@ -152,9 +159,7 @@ export default function TournamentSetup({
         <Link
           href={`/events/${slug}/tournament/lineup`}
           className="tournament-button tournament-button--primary">
-          {remainingSpots > 0
-            ? "Complete player lineup"
-            : "Edit player lineup"}
+          {remainingSpots > 0 ? "Complete player lineup" : "Edit player lineup"}
         </Link>
 
         <fieldset className="tournament-fieldset">

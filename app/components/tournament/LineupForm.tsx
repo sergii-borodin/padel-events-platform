@@ -368,151 +368,155 @@ export default function LineupForm({
                 ) : null}
               </div>
 
-              <div className="lineup-court__surface">
+              <div className="relative flex gap-10">
                 {[0, 1].map((side) => {
                   const start = side * 2;
                   const sidePlayers = field.players.slice(start, start + 2);
 
                   return (
-                    <div key={side} className="lineup-court__side">
-                      <span className="lineup-court__side-label">
-                        {side === 0 ? "Team A" : "Team B"}
-                      </span>
-                      <div className="lineup-court__slots">
-                        {sidePlayers.map((player, sideIndex) => {
-                          const playerIndex = start + sideIndex;
-                          const slotIndex =
-                            fieldIndex * PLAYERS_PER_COURT + playerIndex;
-                          const signedUp = Boolean(player.bookingId);
-                          const empty = !isRealLineupPlayer(player);
-                          const playerLabel =
-                            [player.firstName, player.lastName]
-                              .filter(Boolean)
-                              .join(" ")
-                              .trim() || `player ${slotIndex + 1}`;
+                    <>
+                      <div key={side} className="flex flex-col gap-2 w-full">
+                        <span className="lineup-court__side-label">
+                          {side === 0 ? "Team A" : "Team B"}
+                        </span>
+                        <div className="flex flex-col gap-2 w-full">
+                          {sidePlayers.map((player, sideIndex) => {
+                            const playerIndex = start + sideIndex;
+                            const slotIndex =
+                              fieldIndex * PLAYERS_PER_COURT + playerIndex;
+                            const signedUp = Boolean(player.bookingId);
+                            const empty = !isRealLineupPlayer(player);
+                            const playerLabel =
+                              [player.firstName, player.lastName]
+                                .filter(Boolean)
+                                .join(" ")
+                                .trim() || `player ${slotIndex + 1}`;
 
-                          return (
-                            <article
-                              key={player.key}
-                              data-lineup-index={slotIndex}
-                              className={`lineup-slot${
-                                draggingIndex === slotIndex
-                                  ? " is-dragging"
-                                  : ""
-                              }${
-                                dropSlotIndex === slotIndex
-                                  ? " is-drop-target"
-                                  : ""
-                              }${empty ? " is-empty" : ""}`}>
-                              <button
-                                type="button"
-                                className="lineup-slot__handle"
-                                aria-label={`Drag to move ${playerLabel}`}
-                                disabled={readOnly}
-                                onPointerDown={(event) =>
-                                  handlePointerDown(slotIndex, event)
-                                }
-                                onPointerMove={handlePointerMove}
-                                onPointerUp={handleDragEnd}
-                                onPointerCancel={handleDragEnd}
-                                onKeyDown={(event) => {
-                                  if (event.key === "ArrowUp") {
-                                    event.preventDefault();
-                                    handleKeyMove(slotIndex, -1);
-                                  }
-                                  if (event.key === "ArrowDown") {
-                                    event.preventDefault();
-                                    handleKeyMove(slotIndex, 1);
-                                  }
-                                  if (event.key === "ArrowLeft") {
-                                    event.preventDefault();
-                                    handleKeyMoveCourt(slotIndex, -1);
-                                  }
-                                  if (event.key === "ArrowRight") {
-                                    event.preventDefault();
-                                    handleKeyMoveCourt(slotIndex, 1);
-                                  }
-                                }}>
-                                <span aria-hidden="true">⋮⋮</span>
-                              </button>
-
-                              <div className="lineup-slot__fields">
-                                <label className="lineup-field">
-                                  <span className="lineup-field__mobile-label">
-                                    Name
-                                  </span>
-                                  <input
-                                    type="text"
-                                    value={player.firstName}
-                                    onChange={(event) =>
-                                      updatePlayer(
-                                        fieldIndex,
-                                        playerIndex,
-                                        "firstName",
-                                        event.target.value,
-                                      )
-                                    }
-                                    placeholder="Name"
-                                    autoComplete="given-name"
-                                    disabled={readOnly}
-                                    aria-label={`Name for ${TEAM_LABELS[playerIndex]} on court ${fieldIndex + 1}`}
-                                  />
-                                </label>
-
-                                <label className="lineup-field">
-                                  <span className="lineup-field__mobile-label">
-                                    Second name
-                                  </span>
-                                  <input
-                                    type="text"
-                                    value={player.lastName}
-                                    onChange={(event) =>
-                                      updatePlayer(
-                                        fieldIndex,
-                                        playerIndex,
-                                        "lastName",
-                                        event.target.value,
-                                      )
-                                    }
-                                    placeholder="Second name"
-                                    autoComplete="family-name"
-                                    disabled={readOnly}
-                                    aria-label={`Second name for ${TEAM_LABELS[playerIndex]} on court ${fieldIndex + 1}`}
-                                  />
-                                </label>
-                              </div>
-
-                              {signedUp ? (
-                                <span className="lineup-row__badge">
-                                  Signed up
-                                </span>
-                              ) : readOnly ? (
-                                <span className="lineup-row__badge" />
-                              ) : empty ? (
-                                <span className="lineup-slot__empty">
-                                  Drop player
-                                </span>
-                              ) : (
+                            return (
+                              <article
+                                key={player.key}
+                                data-lineup-index={slotIndex}
+                                className={`lineup-slot${
+                                  draggingIndex === slotIndex
+                                    ? " is-dragging"
+                                    : ""
+                                }${
+                                  dropSlotIndex === slotIndex
+                                    ? " is-drop-target"
+                                    : ""
+                                }${empty ? " is-empty" : ""}`}>
                                 <button
                                   type="button"
-                                  className="tournament-button tournament-button--ghost lineup-row__remove"
-                                  onClick={() =>
-                                    clearPlayer(fieldIndex, playerIndex)
+                                  className="lineup-slot__handle"
+                                  aria-label={`Drag to move ${playerLabel}`}
+                                  disabled={readOnly}
+                                  onPointerDown={(event) =>
+                                    handlePointerDown(slotIndex, event)
                                   }
-                                  aria-label={`Clear ${playerLabel}`}>
-                                  Clear
+                                  onPointerMove={handlePointerMove}
+                                  onPointerUp={handleDragEnd}
+                                  onPointerCancel={handleDragEnd}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "ArrowUp") {
+                                      event.preventDefault();
+                                      handleKeyMove(slotIndex, -1);
+                                    }
+                                    if (event.key === "ArrowDown") {
+                                      event.preventDefault();
+                                      handleKeyMove(slotIndex, 1);
+                                    }
+                                    if (event.key === "ArrowLeft") {
+                                      event.preventDefault();
+                                      handleKeyMoveCourt(slotIndex, -1);
+                                    }
+                                    if (event.key === "ArrowRight") {
+                                      event.preventDefault();
+                                      handleKeyMoveCourt(slotIndex, 1);
+                                    }
+                                  }}>
+                                  <span aria-hidden="true">⋮⋮</span>
                                 </button>
-                              )}
-                            </article>
-                          );
-                        })}
+
+                                <div className="lineup-slot__fields">
+                                  <label className="lineup-field">
+                                    <span className="lineup-field__mobile-label">
+                                      Name
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={player.firstName}
+                                      onChange={(event) =>
+                                        updatePlayer(
+                                          fieldIndex,
+                                          playerIndex,
+                                          "firstName",
+                                          event.target.value,
+                                        )
+                                      }
+                                      placeholder="Name"
+                                      autoComplete="given-name"
+                                      disabled={readOnly}
+                                      aria-label={`Name for ${TEAM_LABELS[playerIndex]} on court ${fieldIndex + 1}`}
+                                    />
+                                  </label>
+
+                                  <label className="lineup-field">
+                                    <span className="lineup-field__mobile-label">
+                                      Second name
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={player.lastName}
+                                      onChange={(event) =>
+                                        updatePlayer(
+                                          fieldIndex,
+                                          playerIndex,
+                                          "lastName",
+                                          event.target.value,
+                                        )
+                                      }
+                                      placeholder="Second name"
+                                      autoComplete="family-name"
+                                      disabled={readOnly}
+                                      aria-label={`Second name for ${TEAM_LABELS[playerIndex]} on court ${fieldIndex + 1}`}
+                                    />
+                                  </label>
+                                </div>
+
+                                {signedUp ? (
+                                  <span className="lineup-row__badge">
+                                    Signed up
+                                  </span>
+                                ) : readOnly ? (
+                                  <span className="lineup-row__badge" />
+                                ) : empty ? (
+                                  <span className="lineup-slot__empty">
+                                    Drop player
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="tournament-button tournament-button--ghost lineup-row__remove"
+                                    onClick={() =>
+                                      clearPlayer(fieldIndex, playerIndex)
+                                    }
+                                    aria-label={`Clear ${playerLabel}`}>
+                                    Clear
+                                  </button>
+                                )}
+                              </article>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                      {side === 0 ? (
+                        <div
+                          className="bg-primary/30 my-0.5 w-px hight-full"
+                          aria-hidden="true"></div>
+                      ) : null}
+                    </>
                   );
                 })}
-                <div className="lineup-court__net" aria-hidden="true">
-                  <span />
-                </div>
               </div>
             </section>
           );
