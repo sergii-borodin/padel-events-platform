@@ -85,6 +85,7 @@ export default function TournamentSetup({
   const [courts, setCourts] = useState<string[]>(
     initialSettings?.courts?.map((court) => court.name) ?? ["Court 1"],
   );
+  console.log(courts);
   const [confirmResting, setConfirmResting] = useState(false);
 
   const previewPlayers =

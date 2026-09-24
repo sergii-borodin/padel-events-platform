@@ -58,7 +58,9 @@ export default function PadelCourt({
           <span className="padel-court__sign">{courtName}</span>
         </div>
         <div className="padel-court__wall padel-court__wall--right" />
-        <div className="padel-court__side padel-court__side--top" aria-hidden="true">
+        <div
+          className="padel-court__side padel-court__side--top"
+          aria-hidden="true">
           <span className="padel-court__glass" />
           <span className="padel-court__mesh" />
           <span className="padel-court__glass" />
@@ -86,7 +88,14 @@ export default function PadelCourt({
               stroke="white"
               strokeWidth="1.4"
             />
-            <line x1="30" y1="1.2" x2="30" y2="98.8" stroke="white" strokeWidth="1" />
+            <line
+              x1="30"
+              y1="1.2"
+              x2="30"
+              y2="98.8"
+              stroke="white"
+              strokeWidth="1"
+            />
             <line
               x1="170"
               y1="1.2"
@@ -95,8 +104,22 @@ export default function PadelCourt({
               stroke="white"
               strokeWidth="1"
             />
-            <line x1="30" y1="50" x2="100" y2="50" stroke="white" strokeWidth="1" />
-            <line x1="100" y1="50" x2="170" y2="50" stroke="white" strokeWidth="1" />
+            <line
+              x1="30"
+              y1="50"
+              x2="100"
+              y2="50"
+              stroke="white"
+              strokeWidth="1"
+            />
+            <line
+              x1="100"
+              y1="50"
+              x2="170"
+              y2="50"
+              stroke="white"
+              strokeWidth="1"
+            />
           </svg>
 
           <div className="padel-court__net" aria-hidden="true">

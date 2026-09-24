@@ -95,7 +95,7 @@ export interface ITournament {
 
 type TournamentModel = Model<ITournament>;
 
-const POINTS_TO_VALUES: PointsTo[] = [11, 16, 21, 24, 32];
+const POINTS_TO_VALUES: PointsTo[] = [24, 32];
 const FEEDBACK_TONE_VALUES: FeedbackTone[] = [
   "formal",
   "neutral",
@@ -234,9 +234,9 @@ const tournamentSchema = new Schema<ITournament, TournamentModel>(
       type: Number,
       enum: {
         values: POINTS_TO_VALUES,
-        message: "pointsTo must be 11, 16, 21, 24, or 32.",
+        message: "pointsTo must be 16, 24, or 32.",
       },
-      default: 16,
+      default: 24,
       required: true,
     },
 

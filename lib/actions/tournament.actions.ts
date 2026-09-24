@@ -87,7 +87,7 @@ type ActionResult<T = void> =
       message?: string;
     };
 
-const POINTS_TO: PointsTo[] = [11, 16, 21, 24, 32];
+const POINTS_TO: PointsTo[] = [24, 32];
 
 function toDTO(doc: {
   _id: unknown;
@@ -133,9 +133,7 @@ function revalidateTournamentPaths(slug: string) {
   revalidatePath(`/events/${slug}/tournament`);
 }
 
-function normalizeCourts(
-  courts: Array<{ name: string }>,
-): ITournamentCourt[] {
+function normalizeCourts(courts: Array<{ name: string }>): ITournamentCourt[] {
   const cleaned = courts
     .map((court, index) => ({
       id: createId("court"),
@@ -183,9 +181,7 @@ function applyMatchScores(
   return null;
 }
 
-function validateSettings(
-  settings: TournamentSettingsInput,
-): string | null {
+function validateSettings(settings: TournamentSettingsInput): string | null {
   if (
     settings.tournamentType !== "americano" &&
     settings.tournamentType !== "mexicano"
@@ -390,7 +386,8 @@ export async function saveTournamentLineup({
     if (!createdBookings.success) {
       return {
         success: false,
-        reason: createdBookings.reason === "event-not-found" ? "not-found" : "error",
+        reason:
+          createdBookings.reason === "event-not-found" ? "not-found" : "error",
         message:
           createdBookings.reason === "full"
             ? "Not enough spots left to book all lineup players."
@@ -454,9 +451,7 @@ export async function saveTournamentLineup({
       success: false,
       reason: "error",
       message:
-        error instanceof Error
-          ? error.message
-          : "Could not save the lineup.",
+        error instanceof Error ? error.message : "Could not save the lineup.",
     };
   }
 }
@@ -611,9 +606,7 @@ export async function startTournament(
       success: false,
       reason: "error",
       message:
-        error instanceof Error
-          ? error.message
-          : "Could not start tournament.",
+        error instanceof Error ? error.message : "Could not start tournament.",
     };
   }
 }
@@ -1001,4 +994,3 @@ export async function goToRound({
     return { success: false, reason: "error" };
   }
 }
-
