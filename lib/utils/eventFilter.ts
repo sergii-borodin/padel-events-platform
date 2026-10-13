@@ -116,6 +116,11 @@ function getZonedParts(date: Date) {
   };
 }
 
+export function getStartOfToday(now = new Date()): Date {
+  const parts = getZonedParts(now);
+  return zonedCivilToUtc(parts.year, parts.month, parts.day);
+}
+
 export function getThisWeekRange(now = new Date()): { start: Date; end: Date } {
   const parts = getZonedParts(now);
   const monday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
