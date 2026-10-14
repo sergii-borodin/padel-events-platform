@@ -22,6 +22,10 @@ Do not let the creation of the tournament with less than 4 participants
 
 When logged in the auth-nav\_\_trigger button in the nav is empty until, i guess, the check of authentication is not finished. Explore the opportunities to improve UX.
 
+### Implement tournaments with the fast partner.
+
+### Research wether the global.css file is the right way to handle.
+
 ### Past events
 
 Do not delete past events, their bookings, or their images. Leave that for later. Rating stays as it is: the number is recomputed from finished tournaments, and those tournaments stay.
