@@ -14,8 +14,6 @@ Add a GitHub Actions workflow to the Padel repo that runs Playwright tests on ev
 
 Implement the password resetting
 
-- Booking-button should be working only for the logged in user. Remove unnecessary fields
-
 On the /events/[slug]/tournament/lineup page fix the form that represents player on the court. So the provided user will take the same amount of space as the default one.
 
 Do not let the creation of the tournament with less than 4 participants
@@ -25,6 +23,16 @@ When logged in the auth-nav\_\_trigger button in the nav is empty until, i guess
 ### Implement tournaments with the fast partner.
 
 ### Research wether the global.css file is the right way to handle.
+
+### Tournament
+
+The tournament to run, user should be registered in the system and to be organizer.
+When a tournament has being started the booking form should not be shown longer.
+
+### Booking event
+
+Make the logged in user to click the button to book the event, show popup to confirm and make a booking form the user info that the system is already know about the user.
+Booking-button should be working only for the logged in user. Inform unauthorized users to participate as a guest contacting the organizer (inform that their participation will not be registered and will not be reflected on the rating page).Remove unnecessary fields
 
 ### Past events
 

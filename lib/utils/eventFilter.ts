@@ -221,6 +221,10 @@ export function eventFilterHref(category: EventFilterCategory): string {
     : `/events?filter=${category}`;
 }
 
+function laterInstant(a: Date, b: Date): Date {
+  return a.getTime() >= b.getTime() ? a : b;
+}
+
 export function toEventQuery(
   filter: ParsedEventFilter,
   now = new Date(),
@@ -233,18 +237,23 @@ export function toEventQuery(
     lng: filter.lng,
   };
 
+  const today = getStartOfToday(now);
+
   if (filter.category === "week") {
     const range = getThisWeekRange(now);
-    query.rangeStart = range.start.toISOString();
+    query.rangeStart = laterInstant(today, range.start).toISOString();
     query.rangeEnd = range.end.toISOString();
+    return query;
   }
 
   if (filter.category === "month") {
     const range = getThisMonthRange(now);
-    query.rangeStart = range.start.toISOString();
+    query.rangeStart = laterInstant(today, range.start).toISOString();
     query.rangeEnd = range.end.toISOString();
+    return query;
   }
 
+  query.rangeStart = today.toISOString();
   return query;
 }
 
