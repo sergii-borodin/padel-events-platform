@@ -14,7 +14,7 @@ import {
 import { getEventParticipants } from "@/lib/actions/booking.actions";
 import { getTournamentStatusBySlug } from "@/lib/actions/tournament.actions";
 import { IEvent } from "@/database/event.model";
-import { getStartOfToday } from "@/lib/utils/eventFilter";
+import { floorToMinute } from "@/lib/utils/eventFilter";
 
 const EventDetailItem = ({
   icon,
@@ -96,7 +96,7 @@ const EventDetailsPage = ({
   </Suspense>
 );
 
-async function getCachedEventDetails(slug: string, rangeStart: string) {
+async function getCachedEventDetails(slug: string, asOf: string) {
   "use cache";
   cacheLife("minutes");
 
@@ -104,7 +104,7 @@ async function getCachedEventDetails(slug: string, rangeStart: string) {
   if (!event?.description) return null;
 
   const [similarEvents, participants, tournamentStatus] = await Promise.all([
-    getSimilarEventBySlug(slug, rangeStart),
+    getSimilarEventBySlug(slug, asOf),
     getEventParticipants(event._id),
     getTournamentStatusBySlug(slug),
   ]);
@@ -120,7 +120,7 @@ async function EventDetailsContent({
   const { slug } = await params;
   const cached = await getCachedEventDetails(
     slug,
-    getStartOfToday().toISOString(),
+    floorToMinute().toISOString(),
   );
 
   if (!cached) return notFound();

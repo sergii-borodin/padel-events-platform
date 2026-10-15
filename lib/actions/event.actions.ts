@@ -3,6 +3,7 @@ import { Event, type IEvent } from "@/database/event.model";
 import { Booking } from "@/database/booking.model";
 import {
   DEFAULT_RADIUS_KM,
+  eventStartsAt,
   getStartOfToday,
   type EventQuery,
 } from "@/lib/utils/eventFilter";
@@ -90,6 +91,20 @@ function upcomingDateBounds(query: EventQuery): {
   return { $gte: start, $lt: end };
 }
 
+function resolveAsOf(value?: string): Date {
+  if (!value) return new Date();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function isStillUpcoming(
+  event: { date: Date | string; time: string },
+  asOf: Date,
+): boolean {
+  const start = eventStartsAt(event.date, event.time);
+  return start != null && start.getTime() >= asOf.getTime();
+}
+
 export const getEvents = async (
   query: EventQuery = {
     category: "all",
@@ -107,9 +122,12 @@ export const getEvents = async (
       ...bookingsLookupStages,
       { $sort: { date: 1, time: 1 } },
     ]);
+    const upcoming = events.filter((event) =>
+      isStillUpcoming(event, resolveAsOf(query.asOf)),
+    );
 
     if (query.category !== "local") {
-      return events.map(serializeEvent);
+      return upcoming.map(serializeEvent);
     }
 
     if (query.lat == null || query.lng == null) {
@@ -117,7 +135,7 @@ export const getEvents = async (
     }
 
     const nearby = await filterEventsByRadius(
-      events,
+      upcoming,
       { lat: query.lat, lng: query.lng },
       query.radiusKm,
     );
@@ -148,7 +166,7 @@ export const getEventBySlug = async (
 
 export const getSimilarEventBySlug = async (
   slug: string,
-  rangeStart = getStartOfToday().toISOString(),
+  asOf = new Date().toISOString(),
 ) => {
   try {
     await connectDB();
@@ -160,8 +178,6 @@ export const getSimilarEventBySlug = async (
       return [];
     }
 
-    const start = notBeforeToday(rangeStart);
-
     const similar = await Event.aggregate<IEvent & { _id: unknown }>([
       {
         $match: {
@@ -169,13 +185,16 @@ export const getSimilarEventBySlug = async (
           tags: { $in: event.tags },
           minRating: { $lte: event.maxRating },
           maxRating: { $gte: event.minRating },
-          date: { $gte: start },
+          date: { $gte: getStartOfToday() },
         },
       },
       ...bookingsLookupStages,
     ]);
 
-    return similar.map(serializeEvent);
+    const cutoff = resolveAsOf(asOf);
+    return similar
+      .filter((candidate) => isStillUpcoming(candidate, cutoff))
+      .map(serializeEvent);
   } catch {
     return [];
   }
