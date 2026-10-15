@@ -91,18 +91,12 @@ function upcomingDateBounds(query: EventQuery): {
   return { $gte: start, $lt: end };
 }
 
-function resolveAsOf(value?: string): Date {
-  if (!value) return new Date();
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-}
-
 function isStillUpcoming(
   event: { date: Date | string; time: string },
-  asOf: Date,
+  now = new Date(),
 ): boolean {
   const start = eventStartsAt(event.date, event.time);
-  return start != null && start.getTime() >= asOf.getTime();
+  return start != null && start.getTime() >= now.getTime();
 }
 
 export const getEvents = async (
@@ -122,9 +116,7 @@ export const getEvents = async (
       ...bookingsLookupStages,
       { $sort: { date: 1, time: 1 } },
     ]);
-    const upcoming = events.filter((event) =>
-      isStillUpcoming(event, resolveAsOf(query.asOf)),
-    );
+    const upcoming = events.filter((event) => isStillUpcoming(event));
 
     if (query.category !== "local") {
       return upcoming.map(serializeEvent);
@@ -164,10 +156,7 @@ export const getEventBySlug = async (
   }
 };
 
-export const getSimilarEventBySlug = async (
-  slug: string,
-  asOf = new Date().toISOString(),
-) => {
+export const getSimilarEventBySlug = async (slug: string) => {
   try {
     await connectDB();
     const event = await Event.findOne({ slug }).lean<
@@ -191,9 +180,8 @@ export const getSimilarEventBySlug = async (
       ...bookingsLookupStages,
     ]);
 
-    const cutoff = resolveAsOf(asOf);
     return similar
-      .filter((candidate) => isStillUpcoming(candidate, cutoff))
+      .filter((candidate) => isStillUpcoming(candidate))
       .map(serializeEvent);
   } catch {
     return [];

@@ -23,7 +23,6 @@ export type EventQuery = {
   lng: number | null;
   rangeStart?: string;
   rangeEnd?: string;
-  asOf?: string;
 };
 
 const TIME_ZONE = "Europe/Copenhagen";
@@ -120,18 +119,6 @@ function getZonedParts(date: Date) {
 export function getStartOfToday(now = new Date()): Date {
   const parts = getZonedParts(now);
   return zonedCivilToUtc(parts.year, parts.month, parts.day);
-}
-
-export function floorToMinute(now = new Date()): Date {
-  return new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      now.getUTCHours(),
-      now.getUTCMinutes(),
-    ),
-  );
 }
 
 export function eventStartsAt(date: Date | string, time: string): Date | null {
@@ -250,10 +237,6 @@ export function eventFilterHref(category: EventFilterCategory): string {
     : `/events?filter=${category}`;
 }
 
-function laterInstant(a: Date, b: Date): Date {
-  return a.getTime() >= b.getTime() ? a : b;
-}
-
 export function toEventQuery(
   filter: ParsedEventFilter,
   now = new Date(),
@@ -264,22 +247,15 @@ export function toEventQuery(
     radiusKm: filter.radiusKm,
     lat: filter.lat,
     lng: filter.lng,
+    rangeStart: getStartOfToday(now).toISOString(),
   };
 
-  const today = getStartOfToday(now);
-  query.asOf = floorToMinute(now).toISOString();
-  query.rangeStart = today.toISOString();
-
   if (filter.category === "week") {
-    const range = getThisWeekRange(now);
-    query.rangeStart = laterInstant(today, range.start).toISOString();
-    query.rangeEnd = range.end.toISOString();
+    query.rangeEnd = getThisWeekRange(now).end.toISOString();
   }
 
   if (filter.category === "month") {
-    const range = getThisMonthRange(now);
-    query.rangeStart = laterInstant(today, range.start).toISOString();
-    query.rangeEnd = range.end.toISOString();
+    query.rangeEnd = getThisMonthRange(now).end.toISOString();
   }
 
   return query;
