@@ -1,7 +1,11 @@
 import connectDB from "@/lib/mongodb";
 import { Event, type IEvent } from "@/database/event.model";
 import { Booking } from "@/database/booking.model";
-import { DEFAULT_RADIUS_KM, type EventQuery } from "@/lib/utils/eventFilter";
+import {
+  DEFAULT_RADIUS_KM,
+  getStartOfToday,
+  type EventQuery,
+} from "@/lib/utils/eventFilter";
 import { distanceKm, geocodeLocation, type Coordinates } from "@/lib/utils/geo";
 
 type EventWithBookings = IEvent & { _id: string };
@@ -58,6 +62,34 @@ async function filterEventsByRadius(
   });
 }
 
+function notBeforeToday(value?: string): Date {
+  const today = getStartOfToday();
+  if (!value) return today;
+
+  const requested = new Date(value);
+  if (
+    Number.isNaN(requested.getTime()) ||
+    requested.getTime() < today.getTime()
+  ) {
+    return today;
+  }
+
+  return requested;
+}
+
+function upcomingDateBounds(query: EventQuery): {
+  $gte: Date;
+  $lt?: Date;
+} {
+  const start = notBeforeToday(query.rangeStart);
+  if (!query.rangeEnd) return { $gte: start };
+
+  const end = new Date(query.rangeEnd);
+  if (Number.isNaN(end.getTime())) return { $gte: start };
+
+  return { $gte: start, $lt: end };
+}
+
 export const getEvents = async (
   query: EventQuery = {
     category: "all",
@@ -70,18 +102,8 @@ export const getEvents = async (
   try {
     await connectDB();
 
-    const match =
-      query.rangeStart && query.rangeEnd
-        ? {
-            date: {
-              $gte: new Date(query.rangeStart),
-              $lt: new Date(query.rangeEnd),
-            },
-          }
-        : null;
-
     const events = await Event.aggregate<IEvent & { _id: unknown }>([
-      ...(match ? [{ $match: match }] : []),
+      { $match: { date: upcomingDateBounds(query) } },
       ...bookingsLookupStages,
       { $sort: { date: 1, time: 1 } },
     ]);
@@ -124,7 +146,10 @@ export const getEventBySlug = async (
   }
 };
 
-export const getSimilarEventBySlug = async (slug: string) => {
+export const getSimilarEventBySlug = async (
+  slug: string,
+  rangeStart = getStartOfToday().toISOString(),
+) => {
   try {
     await connectDB();
     const event = await Event.findOne({ slug }).lean<
@@ -135,6 +160,8 @@ export const getSimilarEventBySlug = async (slug: string) => {
       return [];
     }
 
+    const start = notBeforeToday(rangeStart);
+
     const similar = await Event.aggregate<IEvent & { _id: unknown }>([
       {
         $match: {
@@ -142,6 +169,7 @@ export const getSimilarEventBySlug = async (slug: string) => {
           tags: { $in: event.tags },
           minRating: { $lte: event.maxRating },
           maxRating: { $gte: event.minRating },
+          date: { $gte: start },
         },
       },
       ...bookingsLookupStages,
