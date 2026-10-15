@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { Types } from "mongoose";
 import { getAdminAuth } from "@/lib/firebase/admin";
 import { User } from "@/database";
+import { upsertUserFromFirebase } from "@/lib/actions/user.actions";
 import connectDB from "@/lib/mongodb";
 
 const SESSION_COOKIE_NAME = "session";
@@ -110,23 +111,46 @@ export async function requireOrganizerDisplayName(): Promise<OrganizerDisplayNam
     return { ok: false, status: 401, message: "Unauthorized" };
   }
 
-  await connectDB();
+  const email = typeof decoded.email === "string" ? decoded.email : "";
+  const tokenName = typeof decoded.name === "string" ? decoded.name : undefined;
 
-  const user = await User.findOne({ firebaseUid })
-    .select("firstName lastName")
-    .lean<{ _id: unknown; firstName?: string; lastName?: string } | null>();
+  if (!email) {
+    return {
+      ok: false,
+      status: 409,
+      message: "Add your first and last name before hosting an event.",
+    };
+  }
 
-  const firstName = user?.firstName?.trim() ?? "";
-  const lastName = user?.lastName?.trim() ?? "";
+  const result = await upsertUserFromFirebase({
+    firebaseUid,
+    email,
+    displayName: tokenName,
+  });
 
-  if (!user || !firstName || !lastName) {
-    return { ok: false, status: 409, message: "Complete your profile" };
+  if (result.status !== "created" && result.status !== "updated") {
+    return {
+      ok: false,
+      status: 409,
+      message: "Add your first and last name before hosting an event.",
+    };
+  }
+
+  const firstName = String(result.user.firstName ?? "").trim();
+  const lastName = String(result.user.lastName ?? "").trim();
+
+  if (!firstName || !lastName) {
+    return {
+      ok: false,
+      status: 409,
+      message: "Add your first and last name before hosting an event.",
+    };
   }
 
   return {
     ok: true,
     displayName: `${firstName} ${lastName}`,
     firebaseUid,
-    userId: String(user._id),
+    userId: result.user.id,
   };
 }

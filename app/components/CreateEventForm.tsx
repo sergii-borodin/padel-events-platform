@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 /* =========================
    Types
@@ -147,7 +147,17 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submitErrorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (!submitError) return;
+    submitErrorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [submitError]);
 
   /* ---- Field helpers ---- */
 
@@ -219,12 +229,22 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
     const errs = validate(form);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
+      setSubmitError(
+        "The event was not created. Check the highlighted fields and try again.",
+      );
       return;
     }
     setSubmitting(true);
+    setSubmitError(null);
     try {
       await onSubmit(form);
       handleReset();
+    } catch (error) {
+      const message = error instanceof Error ? error.message.trim() : "";
+      setSubmitError(
+        message ||
+          "Something went wrong and the event was not created. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -236,6 +256,7 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setForm(INITIAL_FORM);
     setErrors({});
+    setSubmitError(null);
     setTagInput("");
     setPreviewUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -264,6 +285,7 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
         .ef-root .field textarea:focus { outline: none; border-color: var(--color-border-info, #4a90e2); box-shadow: 0 0 0 2px rgba(74,144,226,0.15); }
         .ef-root .hint { font-size: 12px; color: var(--color-text-tertiary, #999); margin: 4px 0 0; }
         .ef-root .error { font-size: 12px; color: #d9534f; margin: 4px 0 0; }
+        .ef-root .submit-alert { margin: 0 0 1rem; padding: 12px 14px; border-radius: 8px; background: #fdecec; border: 0.5px solid #f3c1c1; color: #a12622; font-size: 14px; line-height: 1.45; }
         .ef-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .ef-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
         .ef-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
@@ -593,6 +615,12 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
             )}
           </Field>
         </section>
+
+        {submitError && (
+          <p ref={submitErrorRef} className="submit-alert" role="alert">
+            {submitError}
+          </p>
+        )}
 
         {/* Actions */}
         <div className="form-actions">

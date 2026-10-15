@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       email: decoded.email ?? "",
       firstName: optionalName(firstName),
       lastName: optionalName(lastName),
+      displayName: typeof decoded.name === "string" ? decoded.name : undefined,
     });
 
     if (result.status === "error") {

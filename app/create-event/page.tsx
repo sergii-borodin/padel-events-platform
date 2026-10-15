@@ -45,8 +45,15 @@ const CreateNewEvent = () => {
         });
 
         if (!response.ok) {
-          const error = await response.json().catch(() => null);
-          throw new Error(error?.message ?? "Failed to create event");
+          const error = (await response.json().catch(() => null)) as {
+            message?: string;
+          } | null;
+          const message = error?.message?.trim();
+          throw new Error(
+            message && message !== "Event Creation Failed"
+              ? message
+              : "Something went wrong and the event was not created. Please try again.",
+          );
         }
 
         const result = (await response.json().catch(() => null)) as {

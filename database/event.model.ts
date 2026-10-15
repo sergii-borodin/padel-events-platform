@@ -1,4 +1,4 @@
-import { HydratedDocument, Model, Schema, model, models } from "mongoose";
+import { HydratedDocument, Model, Schema, Types, model, models } from "mongoose";
 
 import { createSlug, replaceDanishLetters } from "@/lib/utils/slug";
 import { normalizeTime } from "@/lib/utils/time";
@@ -23,6 +23,7 @@ export interface IEvent {
   maxParticipants: number;
   duration: number; // minutes
   organizer: string;
+  organizerId?: Types.ObjectId;
   tags: string[];
   bookingsCount?: number;
   createdAt: Date;
@@ -145,6 +146,12 @@ const eventSchema = new Schema<IEvent, EventModel>(
       type: String,
       required: [true, "organizer is required."],
       trim: true,
+    },
+
+    organizerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
     },
 
     tags: {

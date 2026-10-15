@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 
 import connectDB from "@/lib/mongodb";
 import { Event } from "@/database/event.model";
 import { getEvents } from "@/lib/actions/event.actions";
 import { requireOrganizerDisplayName } from "@/lib/auth/server";
-import { parseEventFilter, toEventQuery, isCompletePostcode } from "@/lib/utils/eventFilter";
+import {
+  parseEventFilter,
+  toEventQuery,
+  isCompletePostcode,
+} from "@/lib/utils/eventFilter";
 import { geocodePostcode } from "@/lib/utils/geo";
 
 export async function POST(req: NextRequest) {
@@ -65,11 +70,14 @@ export async function POST(req: NextRequest) {
     });
 
     event.image = (uploadResult as { secure_url: string }).secure_url;
+    delete event.organizer;
+    delete event.organizerId;
 
     const createdEvent = await Event.create({
       ...event,
       tags: tags,
       organizer: organizer.displayName,
+      organizerId: new Types.ObjectId(organizer.userId),
     });
 
     return NextResponse.json(

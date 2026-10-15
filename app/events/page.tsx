@@ -4,7 +4,6 @@ import { cacheLife } from "next/cache";
 import EventCard from "../components/EventCard";
 import CreateEventBtn from "../components/CreateEventBtn";
 import EventFilter, { EventFilterFallback } from "../components/EventFilter";
-import type { IEvent } from "@/database/event.model";
 import { getEvents } from "@/lib/actions/event.actions";
 import {
   emptyEventsMessage,
@@ -81,7 +80,7 @@ async function CachedEventsList({ query }: { query: EventQuery }) {
   "use cache";
   cacheLife("minutes");
 
-  const events: IEvent[] = await getEvents(query);
+  const events = await getEvents(query);
 
   if (events.length === 0) {
     return <p>{emptyEventsMessage(query)}</p>;
@@ -89,7 +88,7 @@ async function CachedEventsList({ query }: { query: EventQuery }) {
 
   return (
     <ul className="events">
-      {events.map((event: IEvent) => (
+      {events.map((event) => (
         <li key={event.slug}>
           <EventCard
             title={event.title}

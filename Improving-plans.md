@@ -26,7 +26,7 @@ When logged in the auth-nav\_\_trigger button in the nav is empty until, i guess
 
 ### Tournament
 
-The tournament to run, user should be registered in the system and to be organizer.
+The tournament to start or resume, user should be registered in the system and to be organizer.
 When a tournament has being started the booking form should not be shown longer.
 
 ### Booking event

@@ -32,12 +32,15 @@ const bookingsLookupStages = [
   },
 ] as const;
 
-function serializeEvent<T extends { _id: unknown }>(
+function serializeEvent<T extends { _id: unknown; organizerId?: unknown }>(
   event: T,
-): Omit<T, "_id"> & { _id: string } {
+): Omit<T, "_id" | "organizerId"> & { _id: string; organizerId?: string } {
+  const { organizerId, ...rest } = event;
+
   return {
-    ...event,
+    ...rest,
     _id: String(event._id),
+    ...(organizerId != null ? { organizerId: String(organizerId) } : {}),
   };
 }
 

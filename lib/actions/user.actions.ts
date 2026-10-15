@@ -8,6 +8,8 @@ export type UpsertUserFromFirebaseInput = {
   email: string;
   firstName?: string;
   lastName?: string;
+  /** Firebase display name, used only to fill a missing first or last name. */
+  displayName?: string;
 };
 
 export type UpsertedUser = {
@@ -37,6 +39,17 @@ const isDuplicateKeyError = (error: unknown) =>
   "code" in error &&
   (error as { code?: unknown }).code === 11000;
 
+function namesFromDisplayName(displayName?: string): {
+  firstName: string;
+  lastName: string;
+} {
+  const parts = displayName?.trim().split(/\s+/).filter(Boolean) ?? [];
+  return {
+    firstName: parts[0] ?? "",
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
 function serializeUser(user: UserLean): UpsertedUser {
   return {
     id: String(user._id),
@@ -47,16 +60,54 @@ function serializeUser(user: UserLean): UpsertedUser {
   };
 }
 
+function profileUpdates(
+  existing: UserLean,
+  normalizedUid: string,
+  normalizedEmail: string,
+  normalizedFirstName: string,
+  normalizedLastName: string,
+): Partial<UserLean> {
+  const updates: Partial<UserLean> = {};
+
+  if (existing.firebaseUid !== normalizedUid) {
+    updates.firebaseUid = normalizedUid;
+  }
+  if (existing.email !== normalizedEmail) {
+    updates.email = normalizedEmail;
+  }
+  if (!existing.firstName?.trim() && normalizedFirstName) {
+    updates.firstName = normalizedFirstName;
+  }
+  if (!existing.lastName?.trim() && normalizedLastName) {
+    updates.lastName = normalizedLastName;
+  }
+
+  return updates;
+}
+
+async function saveProfile(
+  existing: UserLean,
+  updates: Partial<UserLean>,
+): Promise<UpsertedUser> {
+  if (Object.keys(updates).length > 0) {
+    await User.updateOne({ _id: existing._id }, { $set: updates });
+  }
+
+  return serializeUser({ ...existing, ...updates });
+}
+
 export const upsertUserFromFirebase = async ({
   firebaseUid,
   email,
   firstName,
   lastName,
+  displayName,
 }: UpsertUserFromFirebaseInput): Promise<UpsertUserResult> => {
   const normalizedUid = firebaseUid.trim();
   const normalizedEmail = email.trim().toLowerCase();
-  const normalizedFirstName = firstName?.trim() ?? "";
-  const normalizedLastName = lastName?.trim() ?? "";
+  const fromDisplayName = namesFromDisplayName(displayName);
+  const normalizedFirstName = firstName?.trim() || fromDisplayName.firstName;
+  const normalizedLastName = lastName?.trim() || fromDisplayName.lastName;
 
   if (!normalizedUid || !normalizedEmail) {
     return { status: "error" };
@@ -65,21 +116,45 @@ export const upsertUserFromFirebase = async ({
   try {
     await connectDB();
 
-    const existing = await User.findOne({ firebaseUid: normalizedUid }).lean<
-      UserLean | null
-    >();
+    const existingByUid = await User.findOne({
+      firebaseUid: normalizedUid,
+    }).lean<UserLean | null>();
 
-    if (existing) {
-      if (existing.email !== normalizedEmail) {
-        await User.updateOne(
-          { firebaseUid: normalizedUid },
-          { $set: { email: normalizedEmail } },
-        );
-      }
-
+    if (existingByUid) {
       return {
         status: "updated",
-        user: serializeUser({ ...existing, email: normalizedEmail }),
+        user: await saveProfile(
+          existingByUid,
+          profileUpdates(
+            existingByUid,
+            normalizedUid,
+            normalizedEmail,
+            normalizedFirstName,
+            normalizedLastName,
+          ),
+        ),
+      };
+    }
+
+    // The same email can already belong to a profile created under an older
+    // Firebase account. Keep that profile and point it at the current login.
+    const existingByEmail = await User.findOne({
+      email: normalizedEmail,
+    }).lean<UserLean | null>();
+
+    if (existingByEmail) {
+      return {
+        status: "updated",
+        user: await saveProfile(
+          existingByEmail,
+          profileUpdates(
+            existingByEmail,
+            normalizedUid,
+            normalizedEmail,
+            normalizedFirstName,
+            normalizedLastName,
+          ),
+        ),
       };
     }
 
@@ -104,9 +179,11 @@ export const upsertUserFromFirebase = async ({
         throw error;
       }
 
-      const raced = await User.findOne({
-        firebaseUid: normalizedUid,
-      }).lean<UserLean | null>();
+      const raced =
+        (await User.findOne({ firebaseUid: normalizedUid }).lean<
+          UserLean | null
+        >()) ??
+        (await User.findOne({ email: normalizedEmail }).lean<UserLean | null>());
 
       if (!raced) {
         return { status: "error" };
@@ -114,7 +191,16 @@ export const upsertUserFromFirebase = async ({
 
       return {
         status: "updated",
-        user: serializeUser(raced),
+        user: await saveProfile(
+          raced,
+          profileUpdates(
+            raced,
+            normalizedUid,
+            normalizedEmail,
+            normalizedFirstName,
+            normalizedLastName,
+          ),
+        ),
       };
     }
   } catch (error) {
