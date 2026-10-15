@@ -9,7 +9,10 @@ import {
 } from "@/lib/utils/eventFilter";
 import { distanceKm, geocodeLocation, type Coordinates } from "@/lib/utils/geo";
 
-type EventWithBookings = IEvent & { _id: string };
+type EventWithBookings = Omit<IEvent, "_id" | "organizerId"> & {
+  _id: string;
+  organizerId?: string;
+};
 
 const bookingsLookupStages = [
   {
@@ -35,11 +38,11 @@ const bookingsLookupStages = [
 function serializeEvent<T extends { _id: unknown; organizerId?: unknown }>(
   event: T,
 ): Omit<T, "_id" | "organizerId"> & { _id: string; organizerId?: string } {
-  const { organizerId, ...rest } = event;
+  const { _id, organizerId, ...rest } = event;
 
   return {
     ...rest,
-    _id: String(event._id),
+    _id: String(_id),
     ...(organizerId != null ? { organizerId: String(organizerId) } : {}),
   };
 }
