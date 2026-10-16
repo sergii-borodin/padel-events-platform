@@ -42,8 +42,8 @@ const INITIAL_FORM: EventFormData = {
   venueType: "inside",
   minRating: 0,
   maxRating: 5,
-  maxParticipants: "",
-  duration: "",
+  maxParticipants: 4,
+  duration: 60,
   tags: [],
 };
 
@@ -99,6 +99,45 @@ function Field({ label, required, error, hint, children }: FieldProps) {
       {hint && !error && <p className="hint">{hint}</p>}
       {error && <p className="error">{error}</p>}
     </div>
+  );
+}
+
+const STEPPER_KEYS = new Set(["ArrowUp", "ArrowDown", "Tab"]);
+
+interface StepperInputProps {
+  value: number | "";
+  min: number;
+  step: number;
+  placeholder?: string;
+  onChange: (value: number | "") => void;
+}
+
+function StepperInput({
+  value,
+  min,
+  step,
+  placeholder,
+  onChange,
+}: StepperInputProps) {
+  return (
+    <input
+      type="number"
+      value={value}
+      min={min}
+      step={step}
+      placeholder={placeholder}
+      style={{ caretColor: "transparent" }}
+      inputMode="none"
+      onKeyDown={(e) => {
+        if (!STEPPER_KEYS.has(e.key)) e.preventDefault();
+      }}
+      onPaste={(e) => e.preventDefault()}
+      onDrop={(e) => e.preventDefault()}
+      onWheel={(e) => e.currentTarget.blur()}
+      onChange={(e) =>
+        onChange(e.target.value === "" ? "" : Number(e.target.value))
+      }
+    />
   );
 }
 
@@ -384,60 +423,62 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
             </div>
 
             <div className="ef-hero-media">
-            <Field label="Cover image" required error={errors.image}>
-              {!previewUrl ? (
-                <div
-                  className={`drop-zone${isDragOver ? " drag-over" : ""}`}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragOver(true);
-                  }}
-                  onDragLeave={() => setIsDragOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragOver(false);
-                    const file = e.dataTransfer.files[0];
+              <Field label="Cover image" required error={errors.image}>
+                {!previewUrl ? (
+                  <div
+                    className={`drop-zone${isDragOver ? " drag-over" : ""}`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragOver(true);
+                    }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragOver(false);
+                      const file = e.dataTransfer.files[0];
+                      if (file) handleFile(file);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload event image"
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && fileInputRef.current?.click()
+                    }>
+                    <p>
+                      <strong>Drop</strong> an image, or <strong>browse</strong>
+                    </p>
+                    <p className="sub">
+                      PNG, JPG or WebP — card size, 410 × 300
+                    </p>
+                  </div>
+                ) : (
+                  <div className="img-preview">
+                    <img src={previewUrl} alt="Event cover preview" />
+                    <button
+                      type="button"
+                      className="img-remove"
+                      onClick={removeImage}
+                      aria-label="Remove image">
+                      ×
+                    </button>
+                    <p className="img-name">
+                      {form.image?.name} (
+                      {((form.image?.size ?? 0) / 1024).toFixed(0)} KB)
+                    </p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
                     if (file) handleFile(file);
                   }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Upload event image"
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && fileInputRef.current?.click()
-                  }>
-                  <p>
-                    <strong>Drop</strong> an image, or <strong>browse</strong>
-                  </p>
-                  <p className="sub">PNG, JPG or WebP — card size, 410 × 300</p>
-                </div>
-              ) : (
-                <div className="img-preview">
-                  <img src={previewUrl} alt="Event cover preview" />
-                  <button
-                    type="button"
-                    className="img-remove"
-                    onClick={removeImage}
-                    aria-label="Remove image">
-                    ×
-                  </button>
-                  <p className="img-name">
-                    {form.image?.name} (
-                    {((form.image?.size ?? 0) / 1024).toFixed(0)} KB)
-                  </p>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFile(file);
-                }}
-              />
-            </Field>
+                />
+              </Field>
             </div>
           </div>
         </section>
@@ -495,6 +536,7 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
               <input
                 type="date"
                 value={form.date}
+                min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => set("date", e.target.value)}
               />
             </Field>
@@ -512,37 +554,26 @@ export default function CreateEventForm({ onSubmit }: CreateEventFormProps) {
               required
               error={errors.duration}
               hint="Minimum 60 minutes">
-              <input
-                type="number"
+              <StepperInput
                 value={form.duration}
                 min={60}
                 step={30}
                 placeholder="e.g. 180"
-                onChange={(e) =>
-                  set(
-                    "duration",
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
+                onChange={(value) => set("duration", value)}
               />
             </Field>
 
             <Field
               label="Max players"
+              hint="Minimum 4 players"
               required
               error={errors.maxParticipants}>
-              <input
-                type="number"
+              <StepperInput
                 value={form.maxParticipants}
-                min={1}
-                step={1}
+                min={4}
+                step={4}
                 placeholder="e.g. 32"
-                onChange={(e) =>
-                  set(
-                    "maxParticipants",
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
+                onChange={(value) => set("maxParticipants", value)}
               />
             </Field>
           </div>
