@@ -1,6 +1,6 @@
-### Flow to be changed:
+### On the home page will be news by different categories: Lunar league, worldwide, local tournaments. Think about the way and permissions for the user that will be able to upload them.
 
-1. After the user got successfully registered in the system, user should get an email with confirmation;
+### After the user got successfully registered in the system, user should get an email with confirmation;
 
 ### Form for event creating:
 

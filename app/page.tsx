@@ -8,7 +8,7 @@ const Home = async () => {
         Here you can browse, book and create padel events
       </h3>
       <p className="text-center mt-5">
-        Rating, Marketplace, News and chats are coming soon...
+        Marketplace, News and chats are coming soon...
       </p>
 
       <ExploreBtn />
