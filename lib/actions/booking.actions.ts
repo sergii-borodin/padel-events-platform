@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
-import { Booking, Event } from "@/database";
+import { Booking, Event, User } from "@/database";
 import { getCurrentMongoUserId } from "@/lib/auth/server";
 import connectDB from "@/lib/mongodb";
 
@@ -16,6 +16,7 @@ type CreateBookingResult =
         | "event-not-found"
         | "full"
         | "invalid-event"
+        | "unauthorized"
         | "error";
     };
 
@@ -42,7 +43,9 @@ export const getEventParticipants = async (
   try {
     await connectDB();
 
-    const bookings = await Booking.find({ eventId: new Types.ObjectId(eventId) })
+    const bookings = await Booking.find({
+      eventId: new Types.ObjectId(eventId),
+    })
       .select("firstName lastName userId")
       .sort({ createdAt: 1 })
       .lean<
@@ -68,15 +71,9 @@ export const getEventParticipants = async (
 
 export const createBooking = async ({
   eventId,
-  firstName,
-  lastName,
-  email,
   slug,
 }: {
   eventId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
   slug: string;
 }): Promise<CreateBookingResult> => {
   if (!Types.ObjectId.isValid(eventId)) {
@@ -84,17 +81,31 @@ export const createBooking = async ({
   }
 
   const eventObjectId = new Types.ObjectId(eventId);
-  const normalizedFirstName = firstName.trim();
-  const normalizedLastName = lastName.trim();
-  const normalizedEmail = email.trim().toLowerCase();
-
-  if (!normalizedFirstName || !normalizedLastName) {
-    return { success: false, reason: "error" };
-  }
-
   const userId = await getCurrentMongoUserId();
 
+  if (!userId) {
+    return { success: false, reason: "unauthorized" };
+  }
+
   try {
+    await connectDB();
+
+    const user = await User.findById(userId)
+      .select("firstName lastName email")
+      .lean<{
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+      } | null>();
+
+    const firstName = user?.firstName?.trim() ?? "";
+    const lastName = user?.lastName?.trim() ?? "";
+    const email = user?.email?.trim().toLowerCase() ?? "";
+
+    if (!firstName || !email) {
+      return { success: false, reason: "error" };
+    }
+
     const db = await connectDB();
     const session = await db.startSession();
 
@@ -113,7 +124,7 @@ export const createBooking = async ({
 
         const existingBooking = await Booking.exists({
           eventId: eventObjectId,
-          email: normalizedEmail,
+          $or: [{ userId }, { email }],
         }).session(session);
 
         if (existingBooking) {
@@ -140,10 +151,10 @@ export const createBooking = async ({
           [
             {
               eventId: eventObjectId,
-              ...(userId ? { userId } : {}),
-              firstName: normalizedFirstName,
-              lastName: normalizedLastName,
-              email: normalizedEmail,
+              userId,
+              firstName,
+              lastName,
+              email,
             },
           ],
           { session },

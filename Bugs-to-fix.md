@@ -4,3 +4,5 @@ How to produce: After having an error in the new event creation form(f.e. provid
 Possible fix: check the form error that could block the submitting
 
 ---
+
+### Fix the filtering for local events

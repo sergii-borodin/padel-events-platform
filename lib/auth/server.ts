@@ -48,43 +48,6 @@ export async function getCurrentMongoUserId(): Promise<Types.ObjectId | null> {
   }
 }
 
-export type BookingPrefill = {
-  firstName: string;
-  lastName: string;
-  email: string;
-};
-
-export async function getCurrentBookingPrefill(): Promise<BookingPrefill | null> {
-  const decoded = await getCurrentUser();
-  const firebaseUid = decoded?.uid?.trim();
-  if (!firebaseUid) return null;
-
-  try {
-    await connectDB();
-
-    const user = await User.findOne({ firebaseUid })
-      .select("firstName lastName email")
-      .lean<{
-        firstName?: string;
-        lastName?: string;
-        email?: string;
-      } | null>();
-
-    if (!user) return null;
-
-    const firstName = user.firstName?.trim() ?? "";
-    const lastName = user.lastName?.trim() ?? "";
-    const email = user.email?.trim().toLowerCase() ?? "";
-
-    if (!firstName && !lastName && !email) return null;
-
-    return { firstName, lastName, email };
-  } catch (error) {
-    console.error("getCurrentBookingPrefill failed", error);
-    return null;
-  }
-}
-
 export type OrganizerDisplayName =
   | {
       ok: true;

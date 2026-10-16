@@ -9,6 +9,12 @@
 - Make a dropdown list or select for Mexicano and Americano
 - Provide hints about possible tags, or provide most popular options. To make most out of it later in the search
 
+### Hide the create event button from unauthorized user on the event page
+
+### Hide the book button for the user that already booked the current event
+
+### Create another state in the filter for the events that user has been booked.
+
 ### Add a GitHub Actions workflow to the Padel repo that runs Playwright tests on every PR. How to implement it. And what exactly should I consider to test?
 
 ### Implement the password resetting

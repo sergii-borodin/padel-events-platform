@@ -5,23 +5,17 @@ import { useRouter } from "next/navigation";
 import { createBooking } from "@/lib/actions/booking.actions";
 import posthog from "posthog-js";
 import PadelCatcherLoader from "@/app/components/PadelCatcherLoader";
+import Link from "next/link";
 
 const BookEvent = ({
   eventId,
   slug,
-  defaultFirstName = "",
-  defaultLastName = "",
-  defaultEmail = "",
+  userId,
 }: {
   eventId: string;
   slug: string;
-  defaultFirstName?: string;
-  defaultLastName?: string;
-  defaultEmail?: string;
+  userId: string;
 }) => {
-  const [firstName, setFirstName] = useState(defaultFirstName);
-  const [lastName, setLastName] = useState(defaultLastName);
-  const [email, setEmail] = useState(defaultEmail);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +30,8 @@ const BookEvent = ({
       case "event-not-found":
       case "invalid-event":
         return "This event is no longer available.";
+      case "unauthorized":
+        return "Sign in to book this event.";
       default:
         return "Booking failed. Please try again.";
     }
@@ -49,16 +45,13 @@ const BookEvent = ({
     try {
       const result = await createBooking({
         eventId,
-        firstName,
-        lastName,
-        email,
         slug,
       });
 
       if (result.success) {
         setSubmitted(true);
         router.refresh();
-        posthog.capture("event_booked", { eventId, slug, email });
+        posthog.capture("event_booked", { eventId, slug, userId });
       } else {
         console.error("Booking creation failed");
         posthog.captureException("Booking creation failed");
@@ -69,60 +62,30 @@ const BookEvent = ({
     }
   };
 
-  return (
+  return userId !== "" ? (
     <div id="book-event">
       {submitting && <PadelCatcherLoader overlay label="Booking your spot…" />}
       {submitted ? (
         <p className="text-sm">Thank you for signing up!</p>
       ) : (
         <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="firstName">Name</label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              id="firstName"
-              placeholder="Enter your name"
-              disabled={submitting}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="lastName">Surname</label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              id="lastName"
-              placeholder="Enter your surname"
-              disabled={submitting}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              id="email"
-              placeholder="Enter your email address"
-              disabled={submitting}
-              required
-            />
-          </div>
-
           <button type="submit" className="button-submit" disabled={submitting}>
-            {submitting ? "Booking…" : "Submit"}
+            {submitting ? "Booking…" : "Book"}
           </button>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
         </form>
       )}
     </div>
+  ) : (
+    <>
+      <p className="text-sm text-red-500">
+        To book an event, you need to have an account and be logged in.
+      </p>
+      <Link href="/auth" className="text-sm underline">
+        Go to Login/Register page
+      </Link>
+    </>
   );
 };
 export default BookEvent;
