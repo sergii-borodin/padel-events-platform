@@ -1,4 +1,5 @@
 import BookEvent from "@/app/components/BookEvent";
+import { Booking } from "@/database";
 import { getCurrentMongoUserId } from "@/lib/auth/server";
 
 export function BookEventFallback() {
@@ -18,11 +19,16 @@ export default async function BookEventSlot({
 }) {
   const userId = await getCurrentMongoUserId();
 
+  const alreadyBooked = userId
+    ? Boolean(await Booking.exists({ eventId, userId }))
+    : false;
+
   return (
     <BookEvent
       eventId={eventId}
       slug={slug}
       userId={userId?.toString() ?? ""}
+      alreadyBooked={alreadyBooked}
     />
   );
 }

@@ -11,10 +11,12 @@ const BookEvent = ({
   eventId,
   slug,
   userId,
+  alreadyBooked,
 }: {
   eventId: string;
   slug: string;
   userId: string;
+  alreadyBooked: boolean;
 }) => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +67,7 @@ const BookEvent = ({
   return userId !== "" ? (
     <div id="book-event">
       {submitting && <PadelCatcherLoader overlay label="Booking your spot…" />}
-      {submitted ? (
+      {submitted || alreadyBooked ? (
         <p className="text-sm">Thank you for signing up!</p>
       ) : (
         <form onSubmit={handleSubmit}>
