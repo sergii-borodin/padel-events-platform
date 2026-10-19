@@ -24,19 +24,34 @@ async function cachedGeocode(
 }
 
 async function geocodeDanishPostcode(zip: string): Promise<Coordinates | null> {
-  const response = await fetch(
-    `https://api.dataforsyningen.dk/postnumre/${encodeURIComponent(zip)}`,
-    { headers: { Accept: "application/json" } },
-  );
+  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+  url.searchParams.set("name", zip);
+  url.searchParams.set("count", "100");
 
-  if (!response.ok) return null;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (response.ok) {
+    const data: {
+      results?: {
+        latitude?: number;
+        longitude?: number;
+        country_code?: string;
+        postcodes?: string[];
+      }[];
+    } = await response.json();
+    const hit = data.results?.find(
+      (result) =>
+        result.country_code === "DK" && result.postcodes?.includes(zip),
+    );
 
-  const data: { visueltcenter?: [number, number] } = await response.json();
-  const center = data.visueltcenter;
+    if (
+      typeof hit?.latitude === "number" &&
+      typeof hit.longitude === "number"
+    ) {
+      return { lat: hit.latitude, lng: hit.longitude };
+    }
+  }
 
-  if (!Array.isArray(center) || center.length < 2) return null;
-
-  return { lng: center[0], lat: center[1] };
+  return geocodeNominatim(zip, { countrycodes: "dk", postalcode: zip });
 }
 
 async function geocodePlace(query: string): Promise<Coordinates | null> {
@@ -59,11 +74,19 @@ async function geocodePlace(query: string): Promise<Coordinates | null> {
   return { lat: hit.latitude, lng: hit.longitude };
 }
 
-async function geocodeNominatim(query: string): Promise<Coordinates | null> {
+async function geocodeNominatim(
+  query: string,
+  extra?: Record<string, string>,
+): Promise<Coordinates | null> {
   const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", query);
+  if (!extra?.postalcode) url.searchParams.set("q", query);
   url.searchParams.set("format", "json");
   url.searchParams.set("limit", "1");
+  if (extra) {
+    for (const [key, value] of Object.entries(extra)) {
+      url.searchParams.set(key, value);
+    }
+  }
 
   const response = await fetch(url, { headers: NOMINATIM_HEADERS });
   if (!response.ok) return null;
