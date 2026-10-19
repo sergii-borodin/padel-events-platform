@@ -27,7 +27,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.message ?? "Could not save the lineup." },
-        { status: 400 },
+        { status: result.reason === "forbidden" ? 403 : 400 },
       );
     }
 

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import LineupForm from "@/app/components/tournament/LineupForm";
 import PadelCatcherLoader from "@/app/components/PadelCatcherLoader";
 import { getEventParticipants } from "@/lib/actions/booking.actions";
 import { getEventBySlug } from "@/lib/actions/event.actions";
 import { getTournamentBySlug } from "@/lib/actions/tournament.actions";
+import { isCurrentUserOrganizer } from "@/lib/auth/server";
 import { loadUserRatingSeeds } from "@/lib/rating/load";
 
 export default function TournamentLineupPage({
@@ -31,6 +32,9 @@ async function TournamentLineupContent({
   console.log("[lineup] slug", slug, "event", event?._id ?? null);
 
   if (!event) return notFound();
+  if (!(await isCurrentUserOrganizer(event.organizerId))) {
+    redirect(`/events/${slug}`);
+  }
 
   const [participants, tournament] = await Promise.all([
     getEventParticipants(event._id),

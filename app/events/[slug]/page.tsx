@@ -13,6 +13,7 @@ import {
 } from "@/lib/actions/event.actions";
 import { getEventParticipants } from "@/lib/actions/booking.actions";
 import { getTournamentStatusBySlug } from "@/lib/actions/tournament.actions";
+import { getCurrentMongoUserId } from "@/lib/auth/server";
 import { IEvent } from "@/database/event.model";
 
 const EventDetailItem = ({
@@ -117,7 +118,10 @@ async function EventDetailsContent({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const cached = await getCachedEventDetails(slug);
+  const [cached, currentUserId] = await Promise.all([
+    getCachedEventDetails(slug),
+    getCurrentMongoUserId(),
+  ]);
 
   if (!cached) return notFound();
 
@@ -143,6 +147,10 @@ async function EventDetailsContent({
   } = event;
 
   const bookings = bookingsCount;
+  const isOrganizer =
+    currentUserId != null &&
+    event.organizerId != null &&
+    event.organizerId === String(currentUserId);
 
   return (
     <>
@@ -262,10 +270,12 @@ async function EventDetailsContent({
                   </span>
                 </div>
 
-                <StartTournamentButton
-                  slug={slug}
-                  status={tournamentStatus}
-                />
+                {isOrganizer && (
+                  <StartTournamentButton
+                    slug={slug}
+                    status={tournamentStatus}
+                  />
+                )}
 
                 <ul className="participants-list">
                   {participants.map((participant, index) => {

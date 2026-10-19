@@ -17,6 +17,7 @@ import type {
   TournamentType,
 } from "@/database/tournament.model";
 import { getEventParticipants } from "@/lib/actions/booking.actions";
+import { getCurrentMongoUserId } from "@/lib/auth/server";
 import connectDB from "@/lib/mongodb";
 import {
   canStart,
@@ -77,6 +78,7 @@ type ActionResult<T = void> =
       success: false;
       reason:
         | "not-found"
+        | "forbidden"
         | "invalid"
         | "not-enough-players"
         | "round-incomplete"
@@ -84,7 +86,42 @@ type ActionResult<T = void> =
       message?: string;
     };
 
+const ORGANIZER_ONLY_MESSAGE =
+  "Only the organizer can manage this tournament.";
+
 const POINTS_TO: PointsTo[] = [24, 32];
+
+async function denyUnlessOrganizer(
+  slug: string,
+): Promise<Extract<ActionResult, { success: false }> | null> {
+  await connectDB();
+
+  const event = await Event.findOne({ slug })
+    .select("organizerId")
+    .lean<{ organizerId?: unknown } | null>();
+
+  if (!event) {
+    return { success: false, reason: "not-found" };
+  }
+
+  const organizerId =
+    event.organizerId != null ? String(event.organizerId) : undefined;
+  const currentUserId = await getCurrentMongoUserId();
+
+  if (
+    !organizerId ||
+    currentUserId == null ||
+    String(currentUserId) !== organizerId
+  ) {
+    return {
+      success: false,
+      reason: "forbidden",
+      message: ORGANIZER_ONLY_MESSAGE,
+    };
+  }
+
+  return null;
+}
 
 function toDTO(doc: {
   _id: unknown;
@@ -315,6 +352,9 @@ export async function saveTournamentLineup({
   slug: string;
   fields: LineupFieldSnapshotInput[];
 }): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   if (!Array.isArray(fields) || fields.length < 1) {
     return {
       success: false,
@@ -479,6 +519,9 @@ export async function createOrUpdateTournamentSetup({
   slug: string;
   settings: TournamentSettingsInput;
 }): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   const settingsError = validateSettings(settings);
   if (settingsError) {
     return { success: false, reason: "invalid", message: settingsError };
@@ -569,6 +612,9 @@ export async function createOrUpdateTournamentSetup({
 export async function startTournament(
   slug: string,
 ): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   try {
     await connectDB();
 
@@ -640,6 +686,9 @@ export async function setMatchScore({
   teamAScore: number;
   teamBScore: number;
 }): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   return setRoundScores({
     slug,
     roundIndex,
@@ -656,6 +705,9 @@ export async function setRoundScores({
   roundIndex: number;
   scores: MatchScoreInput[];
 }): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   try {
     await connectDB();
 
@@ -696,6 +748,9 @@ export async function generateNextRound(
   slug: string,
   scores?: MatchScoreInput[],
 ): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   try {
     await connectDB();
 
@@ -759,6 +814,9 @@ export async function generateFinalRound(
   slug: string,
   scores?: MatchScoreInput[],
 ): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   try {
     await connectDB();
 
@@ -881,6 +939,9 @@ export async function finishTournament(
     confirmRoast?: boolean;
   },
 ): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   const recapError = validateRecapInput({ tone, confirmRoast });
   if (recapError) {
     return { success: false, reason: "invalid", message: recapError };
@@ -945,6 +1006,9 @@ export async function generateTournamentRecaps(
     confirmRoast?: boolean;
   },
 ): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   const recapError = validateRecapInput({ tone, confirmRoast });
   if (recapError) {
     return { success: false, reason: "invalid", message: recapError };
@@ -984,6 +1048,9 @@ export async function goToRound({
   slug: string;
   roundIndex: number;
 }): Promise<ActionResult<TournamentDTO>> {
+  const denied = await denyUnlessOrganizer(slug);
+  if (denied) return denied;
+
   try {
     await connectDB();
 

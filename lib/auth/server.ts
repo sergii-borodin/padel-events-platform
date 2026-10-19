@@ -48,6 +48,15 @@ export async function getCurrentMongoUserId(): Promise<Types.ObjectId | null> {
   }
 }
 
+export async function isCurrentUserOrganizer(
+  organizerId: string | null | undefined,
+): Promise<boolean> {
+  if (!organizerId) return false;
+
+  const currentUserId = await getCurrentMongoUserId();
+  return currentUserId != null && String(currentUserId) === organizerId;
+}
+
 export type OrganizerDisplayName =
   | {
       ok: true;
