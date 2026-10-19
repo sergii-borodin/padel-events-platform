@@ -15,6 +15,8 @@
 
 ### Create another state in the filter for the events that user has been booked.
 
+### Past events are hidden from lists and are not deleted. Their bookings and images stay, because finished tournaments are the rating source.
+
 ### Add a GitHub Actions workflow to the Padel repo that runs Playwright tests on every PR. How to implement it. And what exactly should I consider to test?
 
 ### Implement the password resetting

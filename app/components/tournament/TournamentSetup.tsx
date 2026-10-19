@@ -118,10 +118,6 @@ export default function TournamentSetup({
     setCourts((prev) => prev.map((court, i) => (i === index ? name : court)));
   };
 
-  const addCourt = () => {
-    setCourts((prev) => [...prev, `Court ${prev.length + 1}`]);
-  };
-
   const removeCourt = (index: number) => {
     setCourts((prev) =>
       prev.length <= 1 ? prev : prev.filter((_, i) => i !== index),
@@ -271,12 +267,6 @@ export default function TournamentSetup({
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              className="tournament-button tournament-button--ghost"
-              onClick={addCourt}>
-              Add court
-            </button>
           </fieldset>
         )}
 
