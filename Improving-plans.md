@@ -7,7 +7,8 @@
 - The alert for the new event creation submitting class="submit-alert". Research if the error message should be removed form UI when the user start change the field value;
 - Make the preview picture to be consistent in ratio;
 - Make a dropdown list or select for Mexicano and Americano
-- Provide hints about possible tags, or provide most popular options. To make most out of it later in the search
+- Provide hints about possible tags, or provide most popular options. To make most out of it later in the search;
+- Geocoding at read time was enough for the current volume. If the list grew, I would geocode once when the event is created and store lat/lng, then do the radius check without an external call per request.
 
 ### Hide the create event button from unauthorized user on the event page
 

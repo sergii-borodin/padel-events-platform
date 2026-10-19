@@ -21,7 +21,7 @@ const OPTIONS: {
   description: string;
 }[] = [
   { value: "all", label: "All", description: "Every event, earliest first" },
-  { value: "local", label: "Local", description: "Near a postcode" },
+  // { value: "local", label: "Local", description: "Near a postcode" },
   { value: "week", label: "This week", description: "Events this week" },
   { value: "month", label: "This month", description: "Events this month" },
 ];
