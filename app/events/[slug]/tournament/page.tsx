@@ -34,10 +34,19 @@ async function TournamentPageContent({
     getTournamentBySlug(slug),
   ]);
 
+  const lineupNames =
+    tournament?.lineupFields
+      .flatMap((field) =>
+        field.slots.map((slot) =>
+          [slot.firstName, slot.lastName].filter(Boolean).join(" "),
+        ),
+      )
+      .join("|") ?? "";
+
   return (
     <section id="tournament">
       <TournamentApp
-        key={`${tournament?.id ?? "setup"}-${participants.length}-${tournament?.players.length ?? 0}`}
+        key={`${tournament?.id ?? "setup"}-${participants.length}-${tournament?.players.length ?? 0}-${lineupNames}`}
         slug={slug}
         eventTitle={event.title}
         participants={participants}

@@ -288,10 +288,21 @@ export default function LineupForm({
         }
 
         if (result.data?.lineupFields?.length) {
+          const savedBookingIds = new Set(
+            result.data.lineupFields.flatMap((field) =>
+              field.slots
+                .map((slot) => slot.bookingId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          );
           setFields(
             buildLineupFieldsFromSnapshots(
               result.data.lineupFields,
-              participants,
+              participants.filter(
+                (participant) =>
+                  Boolean(participant.userId) ||
+                  savedBookingIds.has(participant.id),
+              ),
               maxParticipants,
             ),
           );
@@ -548,6 +559,7 @@ export default function LineupForm({
       <div className="tournament-actions lineup-form__actions">
         <Link
           href={`/events/${slug}/tournament`}
+          prefetch={false}
           className="tournament-button tournament-button--ghost">
           Back to tournament
         </Link>

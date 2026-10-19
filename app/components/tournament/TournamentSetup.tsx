@@ -14,7 +14,7 @@ import type {
   TournamentType,
 } from "@/lib/tournament";
 import { PLAYERS_PER_COURT, restingCount } from "@/lib/tournament";
-import { playerDisplayName } from "@/lib/tournament/lineup";
+import { isRealLineupPlayer, playerDisplayName } from "@/lib/tournament/lineup";
 import PadelCourt from "./PadelCourt";
 
 const POINTS_OPTIONS: PointsTo[] = [24, 32];
@@ -51,10 +51,26 @@ function groupPlayersByCourt(
   }));
 }
 
+function previewPlayersFromLineup(
+  lineupFields: TournamentDTO["lineupFields"] | undefined,
+): Array<{ name: string; fieldName?: string }> | null {
+  if (!lineupFields?.some((field) => field.slots.length > 0)) return null;
+
+  return lineupFields.flatMap((field) =>
+    field.slots
+      .filter((slot) => isRealLineupPlayer(slot))
+      .map((slot) => ({
+        name: playerDisplayName(slot.firstName, slot.lastName),
+        fieldName: field.name.trim() || undefined,
+      })),
+  );
+}
+
 export default function TournamentSetup({
   slug,
   participants,
   lineupPlayers,
+  lineupFields,
   maxParticipants,
   initialSettings,
   submitting,
@@ -64,6 +80,7 @@ export default function TournamentSetup({
   slug: string;
   participants: EventParticipant[];
   lineupPlayers?: TournamentDTO["players"];
+  lineupFields?: TournamentDTO["lineupFields"];
   maxParticipants: number;
   initialSettings?: Partial<TournamentSettingsInput>;
   submitting: boolean;
@@ -89,7 +106,8 @@ export default function TournamentSetup({
   const [confirmResting, setConfirmResting] = useState(false);
 
   const previewPlayers =
-    lineupPlayers && lineupPlayers.length > 0
+    previewPlayersFromLineup(lineupFields) ??
+    (lineupPlayers && lineupPlayers.length > 0
       ? lineupPlayers.map((player) => ({
           name: player.name,
           fieldName: player.fieldName,
@@ -97,7 +115,7 @@ export default function TournamentSetup({
       : participants.map((participant) => ({
           name: playerDisplayName(participant.firstName, participant.lastName),
           fieldName: undefined as string | undefined,
-        }));
+        })));
   const playerCount = previewPlayers.length;
   const remainingSpots = Math.max(0, maxParticipants - playerCount);
   const lineupCourts = groupPlayersByCourt(previewPlayers, courts);

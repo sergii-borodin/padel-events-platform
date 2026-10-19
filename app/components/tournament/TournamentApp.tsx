@@ -233,6 +233,7 @@ export default function TournamentApp({
           slug={slug}
           participants={participants}
           lineupPlayers={tournament?.players}
+          lineupFields={tournament?.lineupFields}
           maxParticipants={maxParticipants}
           initialSettings={
             tournament

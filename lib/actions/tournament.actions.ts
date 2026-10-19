@@ -16,10 +16,7 @@ import type {
   StartMode,
   TournamentType,
 } from "@/database/tournament.model";
-import {
-  createLineupBookings,
-  getEventParticipants,
-} from "@/lib/actions/booking.actions";
+import { getEventParticipants } from "@/lib/actions/booking.actions";
 import connectDB from "@/lib/mongodb";
 import {
   canStart,
@@ -329,7 +326,9 @@ export async function saveTournamentLineup({
   try {
     await connectDB();
 
-    const event = await Event.findOne({ slug }).select("_id").lean();
+    const event = await Event.findOne({ slug })
+      .select("_id maxParticipants")
+      .lean<{ _id: unknown; maxParticipants: number } | null>();
     if (!event) {
       return { success: false, reason: "not-found" };
     }
@@ -343,7 +342,8 @@ export async function saveTournamentLineup({
       };
     }
 
-    const lineupFields = fields.map((field) => ({
+    const eventObjectId = new Types.ObjectId(String(event._id));
+    const draftFields: LineupFieldSnapshotInput[] = fields.map((field) => ({
       name: (field.name ?? "").trim(),
       slots: (field.slots ?? []).map((slot) => {
         const firstName = slot.firstName?.trim() ?? "";
@@ -355,54 +355,70 @@ export async function saveTournamentLineup({
       }),
     }));
 
-    const pendingBookings: Array<{
-      fieldIndex: number;
-      slotIndex: number;
-      firstName: string;
-      lastName: string;
-    }> = [];
+    const referencedBookingIds = [
+      ...new Set(
+        draftFields.flatMap((field) =>
+          field.slots
+            .map((slot) => slot.bookingId)
+            .filter(
+              (id): id is string => Boolean(id && Types.ObjectId.isValid(id)),
+            ),
+        ),
+      ),
+    ];
+    const signupBookings =
+      referencedBookingIds.length === 0
+        ? []
+        : await Booking.find({
+            _id: {
+              $in: referencedBookingIds.map((id) => new Types.ObjectId(id)),
+            },
+            eventId: eventObjectId,
+          })
+            .select("userId")
+            .lean<Array<{ _id: unknown; userId?: unknown }>>();
+    const realSignupIds = new Set(
+      signupBookings
+        .filter((booking) => serializeBookingUserId(booking.userId))
+        .map((booking) => String(booking._id)),
+    );
+    const lineupFields = draftFields.map((field) => ({
+      name: field.name,
+      slots: field.slots.map((slot) =>
+        slot.bookingId && realSignupIds.has(slot.bookingId)
+          ? slot
+          : { firstName: slot.firstName, lastName: slot.lastName },
+      ),
+    }));
 
-    lineupFields.forEach((field, fieldIndex) => {
-      field.slots.forEach((slot, slotIndex) => {
-        if (!isRealLineupPlayer(slot) || slot.bookingId) return;
-        pendingBookings.push({
-          fieldIndex,
-          slotIndex,
-          firstName: slot.firstName,
-          lastName: slot.lastName,
-        });
-      });
-    });
-
-    const createdBookings = await createLineupBookings({
-      eventId: String(event._id),
-      slug,
-      players: pendingBookings.map(({ firstName, lastName }) => ({
-        firstName,
-        lastName,
-      })),
-    });
-
-    if (!createdBookings.success) {
+    const filledCount = lineupFields.reduce(
+      (count, field) =>
+        count + field.slots.filter((slot) => isRealLineupPlayer(slot)).length,
+      0,
+    );
+    if (filledCount > event.maxParticipants) {
       return {
         success: false,
-        reason:
-          createdBookings.reason === "event-not-found" ? "not-found" : "error",
-        message:
-          createdBookings.reason === "full"
-            ? "Not enough spots left to book all lineup players."
-            : "Could not save the lineup.",
+        reason: "invalid",
+        message: "Lineup has more players than this event allows.",
       };
     }
 
-    createdBookings.data.forEach((booking, index) => {
-      const target = pendingBookings[index];
-      if (!target) return;
-      lineupFields[target.fieldIndex].slots[target.slotIndex] = {
-        ...lineupFields[target.fieldIndex].slots[target.slotIndex],
-        bookingId: booking.id,
-      };
+    const removedSynthetic = await Booking.deleteMany({
+      eventId: eventObjectId,
+      email: { $regex: /@lineup\.local$/ },
+      $or: [{ userId: { $exists: false } }, { userId: null }],
     });
+    if (removedSynthetic.deletedCount > 0) {
+      const bookingsCount = await Booking.countDocuments({
+        eventId: eventObjectId,
+      });
+      await Event.updateOne(
+        { _id: eventObjectId },
+        { $set: { bookingsCount } },
+      );
+      revalidatePath("/events");
+    }
 
     const players = await attachBookingUserIds(
       lineupSnapshotsToPlayers(lineupFields),
@@ -432,7 +448,7 @@ export async function saveTournamentLineup({
         status: "setup",
         tournamentType: "americano",
         startMode: "custom",
-        pointsTo: 16,
+        pointsTo: 24,
         resultSorting: "pointsFirst",
         courts,
         players,
